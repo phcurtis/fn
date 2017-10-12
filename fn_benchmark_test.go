@@ -43,6 +43,11 @@ func f1main(total, invoke int) {
 	}
 }
 func BenchmarkVarious(b *testing.B) {
+	defer func() {
+		fn.LogSetFlags(fn.LflagsDef)
+		fn.LogSetOutput(os.Stdout)
+	}()
+
 	b.Run("fn.Cur............", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			fn.Cur()
@@ -106,37 +111,23 @@ func BenchmarkVarious(b *testing.B) {
 			}
 		}()
 	}
-	b.Run("LogEnd(LogBeg())..............", func(b *testing.B) {
+
+	b.Run("LogEnd(LogBeg())........", func(b *testing.B) {
 		func1(fn.LflagsDef, "logEndLogBeg-")
 		for i := 0; i < b.N; i++ {
-			/* do not do a defer because how benchmark apparatus works
-			   it defers all the b.N defer calls until entire loop finishes.
+			/* don't do a defer HERE because how benchmark apparatus works
+			   -- it defers all the b.N defer calls until entire loop finishes
+			   which makes timing huge.
 			*/
 			fn.LogEnd(fn.LogBeg())
 		}
 	})
-	b.Run("LogEnd(LogBeg())-Discard......", func(b *testing.B) {
+	b.Run("LogEnd(LogBeg())-Discard", func(b *testing.B) {
 		fn.LogSetOutput(ioutil.Discard)
 		fn.LogSetFlags(fn.LflagsOff)
 		for i := 0; i < b.N; i++ {
-			// don't use defer see comment above
+			// don't use defer HERE see comment above
 			fn.LogEnd(fn.LogBeg())
-		}
-	})
-
-	b.Run("LogEndDur(LogBegDur())........", func(b *testing.B) {
-		func1(fn.LflagsDef, "logEndDurLogBegDur-")
-		for i := 0; i < b.N; i++ {
-			// don't use defer see comment above
-			fn.LogEndDur(fn.LogBegDur())
-		}
-	})
-	b.Run("LogEndD(LogBegD())-Discard....", func(b *testing.B) {
-		fn.LogSetOutput(ioutil.Discard)
-		fn.LogSetFlags(fn.LflagsOff)
-		for i := 0; i < b.N; i++ {
-			// don't use defer see comment above
-			fn.LogEndDur(fn.LogBegDur())
 		}
 	})
 }

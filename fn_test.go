@@ -126,38 +126,29 @@ func readStdoutCapLine(b *bytes.Buffer) string {
 func Test_logfuncs(t *testing.T) {
 	fullFuncName := baseName + "Test_logfuncs"
 
-	fn.LogSetFlags(fn.LflagsOff) // turn off stuff so don't have to fool with time, etc
-	fn.LogSetPrefix("Prefix:")   // set prefix to known value
+	fn.LogSetFlags(fn.LflagsOff)       // turn off stuff so don't have to fool with time, etc
+	defer fn.LogSetFlags(fn.LflagsDef) // restore at end of this function
+	fn.LogSetPrefix("Prefix:")         // set prefix to known value
 
 	// set fn.Log outputs to be sent to bytes.Buffer (in memory)
 	buf := bytes.NewBufferString("")
 	fn.LogSetOutput(buf)
 
 	// capture to buf: LogBeg/LogEnd both log.logger stuff and func returned stuff
-	logbeg := fn.LogBeg()
+	logbeg, tim := fn.LogBeg()
 	fmt.Fprintln(buf, logbeg)
-	logend := fn.LogEnd(logbeg)
-	fmt.Fprintln(buf, logend)
-
-	// capture to buf: LogBegDur/LogEndDur both log.logger stuff and func returned stuff
-	logbegDur, tim := fn.LogBegDur()
-	fmt.Fprintln(buf, logbegDur)
-	logendDur, dur := fn.LogEndDur(logbegDur, tim)
-	fmt.Fprintf(buf, "%s Dur:%v\n", logendDur, dur)
+	logend, dur := fn.LogEnd(logbeg, tim)
+	fmt.Fprintf(buf, "%s Dur:%v\n", logend, dur)
 
 	tests := []struct {
 		name string
 		dur  bool
 		want string
 	}{
-		{"LogBeg()----Log.", false, "Prefix:Beg:"},
-		{"LogBeg()----Func", false, ""},
-		{"LogEnd()----Log.", false, "Prefix:End:"},
-		{"LogEnd()----Func", false, ""},
-		{"LogBegDur()-Log.", false, "Prefix:BegDur:"},
-		{"LogBegDur()-Func", false, ""},
-		{"LogEndDur()-Log.", true, "Prefix:EndDur:"},
-		{"LogEndDur()-Func", true, ""},
+		{"LogBeg()-Log.", false, "Prefix:BegDur:"},
+		{"LogBeg()-Func", false, ""},
+		{"LogEnd()-Log.", true, "Prefix:EndDur:"},
+		{"LogEnd()-Func", true, ""},
 	}
 
 	for _, v := range tests {

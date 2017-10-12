@@ -50,6 +50,7 @@ func ExampleCurBase() {
 	// Output:
 	// fn.CurBase(): fn_test.ExampleCurBase
 }
+
 func ExampleCStk() {
 	const baseName = "github.com/phcurtis/fn_test."
 	wantPfix := baseName + "ExampleCStk.func1<--" + baseName + "ExampleCStk<--"
@@ -67,18 +68,9 @@ func ExampleCStk() {
 
 func ExampleLogBeg() {
 	defer fn.LogEnd(fn.LogBeg())
-	fmt.Println("testpoint-1")
-	// Representative output of above code follows:
-	// LogFN: 2017/10/10 09:54:02 Beg:github.com/phcurtis/fn_test.ExampleLogBeg
-	// testpoint-1
-	// LogFN: 2017/10/10 09:54:02 End:github.com/phcurtis/fn_test.ExampleLogBeg
-}
-
-func ExampleLogBegDur() {
-	defer fn.LogEndDur(fn.LogBegDur())
 	fmt.Println("testpointDur")
-	// Representative output of above code follows:
-	// LogFN: 2017/10/10 12:51:16 BegDur:github.com/phcurtis/fn_test.ExampleLogBegDur
+	// Representative output follows
+	// Prefix:2017/10/12 16:03:27 BegDur:github.com/phcurtis/fn_test.ExampleLogBeg
 	// testpointDur
-	// LogFN: 2017/10/10 12:51:16 EndDur:github.com/phcurtis/fn_test.ExampleLogBegDur Dur:4.323µs
+	// Prefix:2017/10/12 16:03:27 EndDur:github.com/phcurtis/fn_test.ExampleLogBeg Dur:1.758µs
 }

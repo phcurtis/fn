@@ -17,7 +17,7 @@ import (
 )
 
 // Version of package fn
-const Version = 0.01
+const Version = 0.02
 
 // Level genealogy values for exported Lvl functions
 const (
@@ -118,32 +118,17 @@ func LogPrefix() string { return logt.Prefix() }
 // LogSetPrefix sets the output prefix for the logger.
 func LogSetPrefix(prefix string) { logt.SetPrefix(prefix) }
 
-// LogBeg logs the beginning of func;
-// Idiomatic usage at func start:  defer fn.LogEnd(fn.LogBeg())
-func LogBeg() string {
-	fn1 := Lvl(Lpar)
-	logt.Println("Beg:" + fn1)
-	return fn1
-}
-
-// LogEnd logs the ending/leaving of a func;
+// LogBeg logs the beginning of a func, captures time for duration;
 // Idiomatic usage at func start: defer fn.LogEnd(fn.LogBeg())
-func LogEnd(str string) string {
-	logt.Println("End:" + str)
-	return str
-}
-
-// LogBegDur logs the beginning of a func, captures time for duration;
-// Idiomatic usage at func start: defer fn.LogEndDur(fn.LogBegDur())
-func LogBegDur() (string, time.Time) {
+func LogBeg() (string, time.Time) {
 	fn1 := Lvl(Lpar)
 	logt.Println("BegDur:" + fn1)
 	return fn1, time.Now()
 }
 
-// LogEndDur -- log ending or leaving of func with its time duration;
-// Idiomatic usage at func start: defer fn.LogEndDur(fn.LogBegDur())
-func LogEndDur(str string, begTime time.Time) (string, time.Duration) {
+// LogEnd -- log ending or leaving of func with its time duration;
+// Idiomatic usage at func start: defer fn.LogEnd(fn.LogBeg())
+func LogEnd(str string, begTime time.Time) (string, time.Duration) {
 	dur := time.Now().Sub(begTime)
 	logt.Printf("EndDur:%s Dur:%v", str, dur)
 	return str, dur
