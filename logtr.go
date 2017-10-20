@@ -162,9 +162,13 @@ func helpltbeg(trlabel string, begMsg string) (begTime time.Time, begFn, reffile
 //  NOTE that the pairing return function uses the configurations that are at
 //  its time of execution which [you] may have changed since the begin portion.
 func LogTrace() func() {
+	muLogt.Lock()
 	if logTraceFlags&Trlogoff > 0 {
+		muLogt.Unlock()
 		return func() {}
 	}
+	muLogt.Unlock()
+
 	begTime, begFn, reffile, reflnum := helpltbeg("BegTrace:", "")
 	return func() {
 		helpltend("EndTrace:", begTime, begFn, reffile, reflnum, "")
@@ -181,9 +185,13 @@ func LogTrace() func() {
 //  NOTE that the pairing return function uses the configurations that are at
 //  its time of execution which [you] may have changed since the begin portion.
 func LogTraceMsgs(begMsg string) func(endMsg string) {
+	muLogt.Lock()
 	if logTraceFlags&Trlogoff > 0 {
+		muLogt.Unlock()
 		return func(string) {}
 	}
+	muLogt.Unlock()
+
 	begTime, begFn, reffile, reflnum := helpltbeg("BegTrMsg:", begMsg)
 	return func(endMsg string) {
 		helpltend("EndTrMsg:", begTime, begFn, reffile, reflnum, endMsg)
