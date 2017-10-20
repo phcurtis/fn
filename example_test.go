@@ -7,6 +7,7 @@ package fn_test
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/phcurtis/fn"
 )
@@ -70,11 +71,24 @@ func ExampleCStk() {
 	// Output: github.com/phcurtis/fn_test.ExampleCStk.func1<--github.com/phcurtis/fn_test.ExampleCStk<--
 }
 
-func ExampleLogBeg() {
-	defer fn.LogEnd(fn.LogBeg())
-	fmt.Println("testpointDur")
-	// Representative output follows
-	// Prefix:2017/10/12 16:03:27 BegDur:github.com/phcurtis/fn_test.ExampleLogBeg
-	// testpointDur
-	// Prefix:2017/10/12 16:03:27 EndDur:github.com/phcurtis/fn_test.ExampleLogBeg Dur:1.758µs
+// Examples of Idiomatic usages of both LogTrace and LogTraceMsgs
+func Example_logtrace() {
+	// output below is wrapped for easier viewing
+	defer fn.LogTrace()() // this is line 38 see output below
+	fmt.Println("Hi There Gopher")
+	time.Sleep(time.Second)
+	defer fn.LogTraceMsgs("message1")("message2") // this is line 41 and (line 44 WAS ending func brace)
+	fmt.Println("Goodbye Gopher")
+	/* Representative Output follows with lines wrapped:
+	   	  LogFN:2017/10/17 14:46:46 example_test.go:38 <wrapped>
+	   	       BegTrace:github.com/phcurtis/fn_test.Example_logtrace
+	   	  Hi There Gopher
+	   	  LogFN:2017/10/17 14:46:47 example_test.go:41 <wrapped>
+	   	       BegTrMsg:github.com/phcurtis/fn_test.Example_logtrace message1
+	   	  Goodbye Gopher
+	   	  LogFN:2017/10/17 14:46:47 example_test.go:44<:41> <wrapped>
+	   	       EndTrMsg:github.com/phcurtis/fn_test.Example_logtrace message2 Dur:82µs
+	         LogFN:2017/10/17 14:46:47 example_test.go:44<:38> <wrapped>
+	   	       EndTrace:github.com/phcurtis/fn_test.Example_logtrace Dur:1.000317s
+	*/
 }

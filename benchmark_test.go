@@ -5,7 +5,7 @@
 package fn_test
 
 import (
-	"fmt"
+	"bytes"
 	"io/ioutil"
 	"log"
 	"os"
@@ -23,27 +23,27 @@ type f1Struct struct {
 
 var f1s f1Struct
 
-func f1() {
+func f1(b *testing.B) {
 	if f1s.cnt < f1s.invoke {
 		f1s.cnt++
-		f1()
+		f1(b)
 	} else {
-		fn.CStk()
 		deep := strings.Count(fn.CStk(), "<--") + 1
 		if deep != f1s.total {
-			panic(fmt.Sprintf("wrong invocations: deep:%d invoke:%d total:%d", deep, f1s.invoke, f1s.total))
+			b.Fatalf("wrong invocations: deep:%d invoke:%d total:%d", deep, f1s.invoke, f1s.total)
 		}
 	}
 }
-func f1main(total, invoke int) {
-	if invoke < 0 || invoke > fn.MaxLvlCStk {
-		panic(fmt.Sprintf("invoke is out of range:%d\n", invoke))
+func f1main(total, invoke int, b *testing.B) {
+	mintot := total - invoke + 3
+	if total < mintot || total > fn.LvlCStkMax {
+		b.Fatalf("total:%d is out of range[%d-%d]\n", total, mintot, fn.LvlCStkMax)
 	}
 	f1s.total = total
 	f1s.invoke = invoke - 1 // since f1main is already 1 deep
 	f1s.cnt = 1
 	if f1s.invoke-f1s.cnt > 0 {
-		f1()
+		f1(b)
 	}
 }
 func BenchmarkVarious(b *testing.B) {
@@ -85,16 +85,22 @@ func BenchmarkVarious(b *testing.B) {
 		{"fn.CStk.~50 deep..", 50},
 		{"fn.CStk.~100deep..", 100},
 		{"fn.CStk.~200deep..", 200},
+		{"fn.CStk.~250deep..", 250},
+		{"fn.CStk.~500deep..", 500},
 	}
 	for _, v := range tests {
 		b.Run(v.name, func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				invoke := v.deep - deepAdj
-				f1main(v.deep, invoke)
+				f1main(v.deep, invoke, b)
 			}
 		})
 	}
+}
 
+func BenchmarkLog(b *testing.B) {
+	fn.SetPkgCfgDef(false)
+	fn.LogSetTraceFlags(fn.TrFlagsDef)
 	func1 := func(lflags int, tempbn string) {
 		fn.LogSetFlags(lflags)
 		tmpfile, err := ioutil.TempFile("", tempbn)
@@ -116,22 +122,68 @@ func BenchmarkVarious(b *testing.B) {
 		}()
 	}
 
-	b.Run("LogEnd(LogBeg())........", func(b *testing.B) {
-		func1(fn.LflagsDef, "logEndLogBeg-")
+	f := func(str string) string {
+		size := 38
+		if len(str) < size {
+			str = str + strings.Repeat(".", size-len(str))
+		}
+		return str
+	}
+
+	b.Run(f("LogTrace()()"), func(b *testing.B) {
+		func1(fn.LflagsDef, "logTrace-")
 		for i := 0; i < b.N; i++ {
-			/* don't do a defer HERE because how benchmark apparatus works
-			   -- it defers all the b.N defer calls until entire loop finishes
-			   which makes timing huge.
-			*/
-			fn.LogEnd(fn.LogBeg())
+			// don't do a defer HERE because how benchmark apparatus works
+			//   -- it defers all the b.N defer calls until entire loop finishes
+			//   which makes timing huge.
+			//
+			fn.LogTrace()()
 		}
 	})
-	b.Run("LogEnd(LogBeg())-Discard", func(b *testing.B) {
+	b.Run(f(`LogTraceMsgs("msg1")("msg2")`), func(b *testing.B) {
+		func1(fn.LflagsDef, "logTrace-")
+		for i := 0; i < b.N; i++ {
+			// don't use defer HERE see comment above
+			fn.LogTraceMsgs("msg1")("msg2")
+		}
+	})
+
+	b.Run(f("LogTrace()()-Discard"), func(b *testing.B) {
 		fn.LogSetOutput(ioutil.Discard)
 		fn.LogSetFlags(fn.LflagsOff)
 		for i := 0; i < b.N; i++ {
 			// don't use defer HERE see comment above
-			fn.LogEnd(fn.LogBeg())
+			fn.LogTrace()()
+		}
+	})
+	b.Run(f(`LogTraceMsgs("msg1")("msg2")-Discard`), func(b *testing.B) {
+		fn.LogSetOutput(ioutil.Discard)
+		fn.LogSetFlags(fn.LflagsOff)
+		for i := 0; i < b.N; i++ {
+			// don't use defer HERE see comment above
+			fn.LogTraceMsgs("msg1")("msg2")
+		}
+	})
+
+	b.Run(f(`LogTraceMsgs("msg1")("msg2")-Trlogoff`), func(b *testing.B) {
+		fn.LogSetTraceFlags(fn.TrFlagsDef | fn.Trlogoff)
+		fn.LogSetFlags(fn.LflagsOff)
+		for i := 0; i < b.N; i++ {
+			// don't use defer HERE see comment above
+			fn.LogTraceMsgs("msg1")("msg2")
+		}
+	})
+
+	b.Run(f(`LogTraceMsgs("msg1")("msg2")-toMembuf`), func(b *testing.B) {
+		fn.LogSetTraceFlags(fn.TrFlagsDef)
+		buf := bytes.NewBufferString("")
+		fn.LogSetOutput(buf)
+		fn.LogSetFlags(fn.LflagsDef)
+
+		//func1(fn.LflagsDef, "logTrace-")
+		for i := 0; i < b.N; i++ {
+			// don't use defer HERE see comment above
+			fn.LogTraceMsgs("msg1")("msg2")
 		}
 	})
 }
