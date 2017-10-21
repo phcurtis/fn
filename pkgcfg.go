@@ -10,7 +10,7 @@ import (
 
 // PkgCfgStruct - package config structure less log Output.
 type PkgCfgStruct struct {
-	Logflags      int
+	LogFlags      int
 	LogPrefix     string
 	LogTraceFlags int
 	LogAlignFile  int
@@ -22,7 +22,7 @@ func PkgCfgDef() (pkgCfg *PkgCfgStruct, logOutput io.Writer) {
 	muLogt.Lock()
 	defer muLogt.Unlock()
 	p := PkgCfgStruct{
-		Logflags:      LflagsDef,
+		LogFlags:      LflagsDef,
 		LogPrefix:     LogPrefixDef,
 		LogTraceFlags: TrFlagsDef,
 		LogAlignFile:  LogAlignFileDef,
@@ -52,7 +52,7 @@ func PkgCfg() (pkgCfg *PkgCfgStruct, logOutput io.Writer) {
 	muLogt.Lock()
 	defer muLogt.Unlock()
 	p := PkgCfgStruct{
-		Logflags:      logt.Flags(),
+		LogFlags:      logt.Flags(),
 		LogPrefix:     logt.Prefix(),
 		LogTraceFlags: logTraceFlags,
 		LogAlignFile:  logAlignFile,
@@ -67,7 +67,7 @@ func SetPkgCfg(p *PkgCfgStruct, logOutput io.Writer) {
 	muLogt.Lock()
 	defer muLogt.Unlock()
 
-	logt.SetFlags(p.Logflags)
+	logt.SetFlags(p.LogFlags)
 	logt.SetPrefix(p.LogPrefix)
 	logTraceFlags = p.LogTraceFlags
 	logAlignFile = p.LogAlignFile

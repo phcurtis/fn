@@ -32,7 +32,7 @@ func Test_pkgcfggroup(t *testing.T) {
 	defiowr := fn.LogGetOutputDef()
 	note := fmt.Sprintf("\n    Note:os.Stdout:%v \n    Note:os.Stderr:%v", os.Stdout, os.Stderr)
 	pkgDefWant := &fn.PkgCfgStruct{
-		Logflags:      fn.LflagsDef,
+		LogFlags:      fn.LflagsDef,
 		LogPrefix:     fn.LogPrefixDef,
 		LogTraceFlags: fn.TrFlagsDef,
 		LogAlignFile:  fn.LogAlignFileDef,
@@ -100,7 +100,7 @@ func Test_pkgcfggroup(t *testing.T) {
 	fn.LogSetAlignFunc(12)
 	got, giowr = fn.PkgCfg()
 	want = &fn.PkgCfgStruct{
-		Logflags:      0xffff,
+		LogFlags:      0xffff,
 		LogPrefix:     "ZyxAbcd",
 		LogTraceFlags: 0xbeef, //dec=48879
 		LogAlignFile:  11,

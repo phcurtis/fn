@@ -160,7 +160,7 @@ const (
 	Trbegtimemicro   = Trbegtime | Trmicroseconds
 	Trendtimemicro   = Trendtime | Trmicroseconds
 	Trmicroboth      = Trbegtime | Trendtime | Trmicroseconds
-	TrFlagsDef       = Trfilenogps
+	TrFlagsDef       = Trfilenogps | Trfnbase
 	TrFlagsOff       = Trnodur | Trfnobegref
 )
 
