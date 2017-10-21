@@ -6,7 +6,6 @@ package fn_test
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"log"
 	"regexp"
@@ -43,8 +42,14 @@ func Test_logfuncs(t *testing.T) {
 	// set fn.Log outputs to be sent to bytes.Buffer (in memory)
 	buf := bytes.NewBufferString("")
 	fn.LogSetOutput(buf)
-	ltf := fn.LogTrace
-	ltmf := fn.LogTraceMsgs
+	const (
+		LTF = iota
+		LTMF
+		LCTFYes
+		LCTFNo
+		LCTMFYes
+		LCTMFNo
+	)
 
 	reDate := `\d{4}/\d\d/\d\d`
 	reTime := `\d\d:\d\d:\d\d`
@@ -57,7 +62,7 @@ func Test_logfuncs(t *testing.T) {
 	reMsg2dur := ` msg2 Dur:\d{1,}[^ ]*`
 	tests := []struct {
 		name    string
-		fnt     interface{}
+		ftype   int
 		regexp  bool
 		arg1    string
 		arg2    string
@@ -66,98 +71,140 @@ func Test_logfuncs(t *testing.T) {
 		wantb   string
 		wante   string
 	}{
-		{"t1", ltf, false, "", "", fn.LflagsOff, fn.TrFlagsOff,
+		{"t1", LTF, false, "", "", fn.LflagsOff, fn.TrFlagsOff,
 			"LogFN: BegTrace:" + fullFN,
 			"LogFN: EndTrace:" + fullFN},
 
-		{"t2", ltmf, false, "msg1", "msg2", fn.LflagsOff, fn.TrFlagsOff,
+		{"t2", LTMF, false, "msg1", "msg2", fn.LflagsOff, fn.TrFlagsOff,
 			"LogFN: BegTrMsg:" + fullFN + " msg1",
 			"LogFN: EndTrMsg:" + fullFN + " msg2"},
 
-		{"t3", ltf, true, "", "", log.Lshortfile, fn.TrFlagsOff,
+		{"t3", LTF, true, "", "", log.Lshortfile, fn.TrFlagsOff,
 			"LogFN: " + rexpfn1 + `:\d{1,}` + reBegtr + fullFN + "[ ]*$",
 			"LogFN: " + rexpfn1 + `:\d{1,}` + reEndtr + fullFN + "[ ]*$"},
 
-		{"t4", ltf, true, "", "", log.Lshortfile, fn.Trfnbase | fn.Trnodur,
+		{"t4", LTF, true, "", "", log.Lshortfile, fn.Trfnbase | fn.Trnodur,
 			"LogFN: " + rexpfn1 + `:\d{1,}` + reBegtr + baseFN + "[ ]*$",
 			"LogFN: " + rexpfn1 + `:\d{1,}<:\d{1,}>` + reEndtr + baseFN + "[ ]*$"},
 
-		{"t5", ltf, true, "", "", log.Lshortfile, fn.Trfnbase | fn.Trnodur | fn.Trfbegrefincfile,
+		{"t5", LTF, true, "", "", log.Lshortfile, fn.Trfnbase | fn.Trnodur | fn.Trfbegrefincfile,
 			"LogFN: " + rexpfn1 + `:\d{1,}` + reBegtr + baseFN + "[ ]*$",
 			"LogFN: " + rexpfn1 + `:\d{1,}<` + rexpfn1 + `:\d{1,}>` + reEndtr + baseFN + "[ ]*$"},
 
-		{"t6", ltf, true, "", "", log.Llongfile, fn.Trfilenogps,
+		{"t6", LTF, true, "", "", log.Llongfile, fn.Trfilenogps,
 			"LogFN: " + rexpfn2 + `:\d{1,}` + reBegtr + fullFN + "[ ]*$",
 			"LogFN: " + rexpfn2 + `:\d{1,}<:\d{1,}>` + reEndtr + fullFN + ` .*Dur:\d{1,}[^ ]*$`},
 
-		{"t7", ltmf, true, "msg1", "msg2", log.Lshortfile, fn.TrFlagsOff,
+		{"t7", LTMF, true, "msg1", "msg2", log.Lshortfile, fn.TrFlagsOff,
 			"LogFN: " + rexpfn1 + `:\d{1,}` + reBegtrm + fullFN + " msg1$",
 			"LogFN: " + rexpfn1 + `:\d{1,}` + reEndtrm + fullFN + " msg2$"},
 
-		{"t8", ltmf, true, "msg1", "msg2", log.Ldate | log.Lshortfile, fn.TrFlagsOff,
+		{"t8", LTMF, true, "msg1", "msg2", log.Ldate | log.Lshortfile, fn.TrFlagsOff,
 			"LogFN: " + `.*` + reDate + ` .*` + rexpfn1 + `:\d{1,}` + reBegtrm + fullFN + " msg1$",
 			"LogFN: " + `.*` + reDate + ` .*` + rexpfn1 + `:\d{1,}` + reEndtrm + fullFN + " msg2$"},
 
-		{"t9", ltmf, true, "msg1", "msg2", log.Ldate | log.Lshortfile, fn.TrFlagsDef,
+		{"t9", LTMF, true, "msg1", "msg2", log.Ldate | log.Lshortfile, fn.Trfilenogps,
 			"LogFN: " + `.*` + reDate + ` .*` + rexpfn1 + `:\d{1,}` + reBegtrm + fullFN + " msg1$",
 			"LogFN: " + `.*` + reDate + ` .*` + rexpfn1 + `:\d{1,}<:\d{1,}>` + reEndtrm + fullFN + reMsg2dur + `$`},
 
-		{"tA", ltmf, true, "msg1", "msg2", log.Ldate | log.Ltime | log.Lshortfile, fn.TrFlagsDef,
+		{"tA", LTMF, true, "msg1", "msg2", log.Ldate | log.Ltime | log.Lshortfile, fn.Trfilenogps,
 			"LogFN: " + `.*` + reDateTime + ` .*` + rexpfn1 + `:\d{1,}` + reBegtrm + fullFN + " msg1$",
 			"LogFN: " + `.*` + reDateTime + ` .*` + rexpfn1 + `:\d{1,}<:\d{1,}>` + reEndtrm + fullFN + reMsg2dur + `$`},
 
-		{"tB", ltmf, true, "msg1", "msg2", log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile, fn.TrFlagsDef,
-			"LogFN: " + `.*` + reDateTimeMicro + ` .*` + rexpfn1 + `:\d{1,}` + reBegtrm + fullFN + " msg1$",
-			"LogFN: " + `.*` + reDateTimeMicro + ` .*` + rexpfn1 + `:\d{1,}<:\d{1,}>` + reEndtrm + fullFN + reMsg2dur + `$`},
+		{"tB", LTMF, true, "msg1", "msg2", log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile, fn.TrFlagsDef,
+			"LogFN: " + `.*` + reDateTimeMicro + ` .*` + rexpfn1 + `:\d{1,}` + reBegtrm + baseFN + " msg1$",
+			"LogFN: " + `.*` + reDateTimeMicro + ` .*` + rexpfn1 + `:\d{1,}<:\d{1,}>` + reEndtrm + baseFN + reMsg2dur + `$`},
 
-		{"tC", ltmf, true, "msg1", "msg2", log.Lshortfile, fn.TrFlagsDef,
-			"LogFN: " + rexpfn1 + `:\d{1,}` + reBegtrm + fullFN + " msg1$",
-			"LogFN: " + rexpfn1 + `:\d{1,}<:\d{1,}>` + reEndtrm + fullFN + reMsg2dur + `$`},
+		{"tC", LTMF, true, "msg1", "msg2", log.Lshortfile, fn.TrFlagsDef,
+			"LogFN: " + rexpfn1 + `:\d{1,}` + reBegtrm + baseFN + " msg1$",
+			"LogFN: " + rexpfn1 + `:\d{1,}<:\d{1,}>` + reEndtrm + baseFN + reMsg2dur + `$`},
 
-		{"tD", ltmf, true, "msg1", "msg2", log.Lshortfile, fn.TrFlagsDef | fn.Trbegtime,
-			"LogFN: " + rexpfn1 + `:\d{1,}` + reBegtrm + fullFN + " msg1 .*Time:" + reDate + ` .*` + reTime + "$",
-			"LogFN: " + rexpfn1 + `:\d{1,}<:\d{1,}>` + reEndtrm + fullFN + reMsg2dur + `$`},
+		{"tD", LTMF, true, "msg1", "msg2", log.Lshortfile, fn.TrFlagsDef | fn.Trbegtime,
+			"LogFN: " + rexpfn1 + `:\d{1,}` + reBegtrm + baseFN + " msg1 .*Time:" + reDate + ` .*` + reTime + "$",
+			"LogFN: " + rexpfn1 + `:\d{1,}<:\d{1,}>` + reEndtrm + baseFN + reMsg2dur + `$`},
 
-		{"tE", ltmf, true, "msg1", "msg2", log.Lshortfile, fn.TrFlagsDef | fn.Trendtime,
-			"LogFN: " + rexpfn1 + `:\d{1,}` + reBegtrm + fullFN + " msg1$",
-			"LogFN: " + rexpfn1 + `:\d{1,}<:\d{1,}>` + reEndtrm + fullFN + reMsg2dur + ` * Time:` + reDateTime + "$"},
+		{"tE", LTMF, true, "msg1", "msg2", log.Lshortfile, fn.TrFlagsDef | fn.Trendtime,
+			"LogFN: " + rexpfn1 + `:\d{1,}` + reBegtrm + baseFN + " msg1$",
+			"LogFN: " + rexpfn1 + `:\d{1,}<:\d{1,}>` + reEndtrm + baseFN + reMsg2dur + ` * Time:` + reDateTime + "$"},
 
-		{"tF", ltmf, true, "msg1", "msg2", log.Lshortfile, fn.TrFlagsDef | fn.Trbegtime | fn.Trmicroseconds,
-			"LogFN: " + rexpfn1 + `:\d{1,}` + reBegtrm + fullFN + " msg1 .*Time:" + reDateTimeMicro + "$",
-			"LogFN: " + rexpfn1 + `:\d{1,}<:\d{1,}>` + reEndtrm + fullFN + reMsg2dur + `$`},
+		{"tF", LTMF, true, "msg1", "msg2", log.Lshortfile, fn.TrFlagsDef | fn.Trbegtime | fn.Trmicroseconds,
+			"LogFN: " + rexpfn1 + `:\d{1,}` + reBegtrm + baseFN + " msg1 .*Time:" + reDateTimeMicro + "$",
+			"LogFN: " + rexpfn1 + `:\d{1,}<:\d{1,}>` + reEndtrm + baseFN + reMsg2dur + `$`},
 
-		{"tG", ltmf, true, "msg1", "msg2", log.Lshortfile, fn.TrFlagsDef | fn.Trmicroboth,
-			"LogFN: " + rexpfn1 + `:\d{1,}` + reBegtrm + fullFN + " msg1 .*Time:" + reDateTime + `\.\d{6}$`,
-			"LogFN: " + rexpfn1 + `:\d{1,}<:\d{1,}>` + reEndtrm + fullFN + reMsg2dur + ` * Time:` + reDateTimeMicro + "$"},
-
-		{"tH", ltf, false, "", "", fn.LflagsOff, fn.Trlogoff,
+		{"tG", LTMF, true, "msg1", "msg2", log.Lshortfile, fn.TrFlagsDef | fn.Trmicroboth,
+			"LogFN: " + rexpfn1 + `:\d{1,}` + reBegtrm + baseFN + " msg1 .*Time:" + reDateTime + `\.\d{6}$`,
+			"LogFN: " + rexpfn1 + `:\d{1,}<:\d{1,}>` + reEndtrm + baseFN + reMsg2dur + ` * Time:` + reDateTimeMicro + "$"},
+		{"tH", LTF, false, "", "", fn.LflagsOff, fn.Trlogignore,
 			"",
 			""},
-		{"tI", ltmf, false, "", "", fn.LflagsOff, fn.Trlogoff,
+		{"tI", LTMF, false, "", "", fn.LflagsOff, fn.Trlogignore,
+			"",
+			""},
+
+		{"tJ", LCTFYes, true, "", "", fn.LflagsOff, fn.TrFlagsDef,
+			"LogFN:" + reBegtr + baseFN,
+			"LogFN:" + reEndtr + baseFN},
+
+		{"tK", LCTFNo, true, "", "", fn.LflagsOff, fn.TrFlagsDef,
+			"",
+			""},
+
+		{"tL", LCTFNo, true, "", "", fn.LflagsOff, fn.Trlogignore,
+			"",
+			""},
+
+		{"tM", LCTMFYes, true, "", "", fn.LflagsOff, fn.TrFlagsDef,
+			"LogFN:" + reBegtrm + baseFN,
+			"LogFN:" + reEndtrm + baseFN},
+
+		{"tN", LCTMFNo, false, "", "", fn.LflagsOff, fn.TrFlagsDef,
+			"",
+			""},
+
+		{"tO", LCTMFNo, false, "", "", fn.LflagsOff, fn.Trlogignore,
 			"",
 			""},
 	}
 
 	var gotb, gote string
-	for i, v := range tests {
+	for _, v := range tests {
 		t.Run(v.name, func(t *testing.T) {
 			fn.SetPkgCfgDef(false) // make sure we are in a known state
 			fn.LogSetFlags(v.lflags)
 			fn.LogSetTraceFlags(v.trflags)
-			switch f := v.fnt.(type) {
-			case (func() func()):
-				f2 := f()
+			switch v.ftype {
+			case LTF:
+				f2 := fn.LogTrace()
 				gotb = readStdoutCapLine(buf)
 				f2()
 				gote = readStdoutCapLine(buf)
-			case (func(string) func(string)):
-				f2 := f(v.arg1)
+			case LCTFYes:
+				f2 := fn.LogCondTrace(true)
+				gotb = readStdoutCapLine(buf)
+				f2()
+				gote = readStdoutCapLine(buf)
+			case LCTFNo:
+				f2 := fn.LogCondTrace(false)
+				gotb = readStdoutCapLine(buf)
+				f2()
+				gote = readStdoutCapLine(buf)
+			case LTMF:
+				f2 := fn.LogTraceMsgs(v.arg1)
+				gotb = readStdoutCapLine(buf)
+				f2(v.arg2)
+				gote = readStdoutCapLine(buf)
+			case LCTMFYes:
+				f2 := fn.LogCondTraceMsgs(true, v.arg1)
+				gotb = readStdoutCapLine(buf)
+				f2(v.arg2)
+				gote = readStdoutCapLine(buf)
+			case LCTMFNo:
+				f2 := fn.LogCondTraceMsgs(false, v.arg1)
 				gotb = readStdoutCapLine(buf)
 				f2(v.arg2)
 				gote = readStdoutCapLine(buf)
 			default:
-				t.Fatalf("item in list is unsupport func type, i:=%d\n", i)
-				fmt.Printf("i:%d v:%#v\n", i, v)
+				panic("ftype not recognized")
 			}
 			if testing.Verbose() {
 				log.SetFlags(0)
