@@ -100,7 +100,6 @@ func BenchmarkVarious(b *testing.B) {
 
 func BenchmarkLog(b *testing.B) {
 	fn.SetPkgCfgDef(false)
-	fn.LogSetTraceFlags(fn.TrFlagsDef)
 	func1 := func(lflags int, tempbn string) {
 		fn.LogSetFlags(lflags)
 		tmpfile, err := ioutil.TempFile("", tempbn)
@@ -123,7 +122,7 @@ func BenchmarkLog(b *testing.B) {
 	}
 
 	f := func(str string) string {
-		size := 38
+		size := 40
 		if len(str) < size {
 			str = str + strings.Repeat(".", size-len(str))
 		}
@@ -131,6 +130,7 @@ func BenchmarkLog(b *testing.B) {
 	}
 
 	b.Run(f("LogTrace()()"), func(b *testing.B) {
+		fn.LogSetTraceFlags(fn.TrFlagsDef)
 		func1(fn.LflagsDef, "logTrace-")
 		for i := 0; i < b.N; i++ {
 			// don't do a defer HERE because how benchmark apparatus works
@@ -140,7 +140,42 @@ func BenchmarkLog(b *testing.B) {
 			fn.LogTrace()()
 		}
 	})
+
+	b.Run(f("LogCondTrace(true)()"), func(b *testing.B) {
+		fn.LogSetTraceFlags(fn.TrFlagsDef)
+		func1(fn.LflagsDef, "logTrace-")
+		for i := 0; i < b.N; i++ {
+			// don't do a defer HERE because how benchmark apparatus works
+			//   -- it defers all the b.N defer calls until entire loop finishes
+			//   which makes timing huge.
+			//
+			fn.LogCondTrace(true)()
+		}
+	})
+
+	b.Run(f("LogCondTrace(false)()"), func(b *testing.B) {
+		fn.LogSetTraceFlags(fn.TrFlagsDef)
+		func1(fn.LflagsDef, "logTrace-")
+		for i := 0; i < b.N; i++ {
+			// don't do a defer HERE because how benchmark apparatus works
+			//   -- it defers all the b.N defer calls until entire loop finishes
+			//   which makes timing huge.
+			//
+			fn.LogCondTrace(false)()
+		}
+	})
+
+	b.Run(f(`LogCondTrace(true)()-Trlogignore`), func(b *testing.B) {
+		fn.LogSetTraceFlags(fn.TrFlagsDef | fn.Trlogignore)
+		fn.LogSetFlags(fn.LflagsOff)
+		for i := 0; i < b.N; i++ {
+			// don't use defer HERE see comment above
+			fn.LogCondTrace(true)()
+		}
+	})
+
 	b.Run(f(`LogTraceMsgs("msg1")("msg2")`), func(b *testing.B) {
+		fn.LogSetTraceFlags(fn.TrFlagsDef)
 		func1(fn.LflagsDef, "logTrace-")
 		for i := 0; i < b.N; i++ {
 			// don't use defer HERE see comment above
@@ -148,7 +183,26 @@ func BenchmarkLog(b *testing.B) {
 		}
 	})
 
+	b.Run(f(`LogCondTraceMsgs(true,"msg1")("msg2")`), func(b *testing.B) {
+		fn.LogSetTraceFlags(fn.TrFlagsDef)
+		func1(fn.LflagsDef, "logTrace-")
+		for i := 0; i < b.N; i++ {
+			// don't use defer HERE see comment above
+			fn.LogCondTraceMsgs(true, "msg1")("msg2")
+		}
+	})
+
+	b.Run(f(`LogCondTraceMsgs(false,"msg1")("msg2")`), func(b *testing.B) {
+		fn.LogSetTraceFlags(fn.TrFlagsDef)
+		func1(fn.LflagsDef, "logTrace-")
+		for i := 0; i < b.N; i++ {
+			// don't use defer HERE see comment above
+			fn.LogCondTraceMsgs(false, "msg1")("msg2")
+		}
+	})
+
 	b.Run(f("LogTrace()()-Discard"), func(b *testing.B) {
+		fn.LogSetTraceFlags(fn.TrFlagsDef)
 		fn.LogSetOutput(ioutil.Discard)
 		fn.LogSetFlags(fn.LflagsOff)
 		for i := 0; i < b.N; i++ {
@@ -157,6 +211,7 @@ func BenchmarkLog(b *testing.B) {
 		}
 	})
 	b.Run(f(`LogTraceMsgs("msg1")("msg2")-Discard`), func(b *testing.B) {
+		fn.LogSetTraceFlags(fn.TrFlagsDef)
 		fn.LogSetOutput(ioutil.Discard)
 		fn.LogSetFlags(fn.LflagsOff)
 		for i := 0; i < b.N; i++ {
@@ -165,8 +220,8 @@ func BenchmarkLog(b *testing.B) {
 		}
 	})
 
-	b.Run(f(`LogTraceMsgs("msg1")("msg2")-Trlogoff`), func(b *testing.B) {
-		fn.LogSetTraceFlags(fn.TrFlagsDef | fn.Trlogoff)
+	b.Run(f(`LogTraceMsgs("msg1")("msg2")-Trlogignore`), func(b *testing.B) {
+		fn.LogSetTraceFlags(fn.TrFlagsDef | fn.Trlogignore)
 		fn.LogSetFlags(fn.LflagsOff)
 		for i := 0; i < b.N; i++ {
 			// don't use defer HERE see comment above

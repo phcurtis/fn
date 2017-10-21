@@ -91,9 +91,9 @@ func formatTime(t time.Time, microseconds bool, msg string) string {
 	return fmt.Sprintf("%s%d/%02d/%02d %02d:%02d:%02d%s", msg, yr, mon, dy, hr, min, sec, micro)
 }
 
-func helpltend(trlabel string, start time.Time, begFn, reffile, reflnum, endMsg string) {
+func helpltend(lvladj int, trlabel string, start time.Time, begFn, reffile, reflnum, endMsg string) {
 	endTime := time.Now()
-	endFn := Lvl(Lgpar)
+	endFn := Lvl(Lgpar + lvladj)
 	if begFn != endFn {
 		if strings.Contains(CStk(), "<--runtime.gopanic") {
 			fmt.Fprintln(os.Stderr, "\nGOPANIC DETECTED --exiting '"+trlabel+"'(helpltend)>CStk:", CStk())
@@ -126,12 +126,12 @@ func helpltend(trlabel string, start time.Time, begFn, reffile, reflnum, endMsg 
 	if logTraceFlags&Trendtime > 0 {
 		str += formatTime(endTime, logTraceFlags&Trmicroseconds > 0, " Time:")
 	}
-	helplt(3, trlabel+str, reffile, reflnum)
+	helplt(3+lvladj, trlabel+str, reffile, reflnum)
 }
 
-func helpltbeg(trlabel string, begMsg string) (begTime time.Time, begFn, reffile, reflnum string) {
+func helpltbeg(lvladj int, trlabel string, begMsg string) (begTime time.Time, begFn, reffile, reflnum string) {
 	begTime = time.Now()
-	begFn = Lvl(Lgpar)
+	begFn = Lvl(Lgpar + lvladj)
 	if begMsg != "" {
 		begMsg = " " + begMsg
 	}
@@ -163,15 +163,55 @@ func helpltbeg(trlabel string, begMsg string) (begTime time.Time, begFn, reffile
 //  its time of execution which [you] may have changed since the begin portion.
 func LogTrace() func() {
 	muLogt.Lock()
-	if logTraceFlags&Trlogoff > 0 {
+	if logTraceFlags&Trlogignore > 0 {
 		muLogt.Unlock()
 		return func() {}
 	}
 	muLogt.Unlock()
 
-	begTime, begFn, reffile, reflnum := helpltbeg("BegTrace:", "")
+	begTime, begFn, reffile, reflnum := helpltbeg(0, "BegTrace:", "")
 	return func() {
-		helpltend("EndTrace:", begTime, begFn, reffile, reflnum, "")
+		helpltend(0, "EndTrace:", begTime, begFn, reffile, reflnum, "")
+	}
+}
+
+// LogCondTrace - conditional version of LogTrace.
+// cond - if true call LogTrace.
+func LogCondTrace(cond bool) func() {
+	if !cond {
+		return func() {}
+	}
+
+	muLogt.Lock()
+	if logTraceFlags&Trlogignore > 0 {
+		muLogt.Unlock()
+		return func() {}
+	}
+	muLogt.Unlock()
+
+	begTime, begFn, reffile, reflnum := helpltbeg(0, "BegTrace:", "")
+	return func() {
+		helpltend(0, "EndTrace:", begTime, begFn, reffile, reflnum, "")
+	}
+}
+
+// LogCondTraceMsgs - conditional version of LogTraceMsgs.
+//	cond - if true call LogTraceMsgs.
+func LogCondTraceMsgs(cond bool, begMsg string) func(endMsg string) {
+	if !cond {
+		return func(string) {}
+	}
+
+	muLogt.Lock()
+	if logTraceFlags&Trlogignore > 0 {
+		muLogt.Unlock()
+		return func(string) {}
+	}
+	muLogt.Unlock()
+
+	begTime, begFn, reffile, reflnum := helpltbeg(0, "BegTrMsg:", begMsg)
+	return func(endMsg string) {
+		helpltend(0, "EndTrMsg:", begTime, begFn, reffile, reflnum, endMsg)
 	}
 }
 
@@ -186,14 +226,14 @@ func LogTrace() func() {
 //  its time of execution which [you] may have changed since the begin portion.
 func LogTraceMsgs(begMsg string) func(endMsg string) {
 	muLogt.Lock()
-	if logTraceFlags&Trlogoff > 0 {
+	if logTraceFlags&Trlogignore > 0 {
 		muLogt.Unlock()
 		return func(string) {}
 	}
 	muLogt.Unlock()
 
-	begTime, begFn, reffile, reflnum := helpltbeg("BegTrMsg:", begMsg)
+	begTime, begFn, reffile, reflnum := helpltbeg(0, "BegTrMsg:", begMsg)
 	return func(endMsg string) {
-		helpltend("EndTrMsg:", begTime, begFn, reffile, reflnum, endMsg)
+		helpltend(0, "EndTrMsg:", begTime, begFn, reffile, reflnum, endMsg)
 	}
 }

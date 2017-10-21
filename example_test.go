@@ -73,22 +73,23 @@ func ExampleCStk() {
 
 // Examples of Idiomatic usages of both LogTrace and LogTraceMsgs
 func Example_logtrace() {
-	// output below is wrapped for easier viewing
-	defer fn.LogTrace()() // this is line 38 see output below
+	// output below: current func name:fn_test.Example_logtrace
+	defer fn.LogTrace()() // this is line 77 see output below
 	fmt.Println("Hi There Gopher")
 	time.Sleep(time.Second)
-	defer fn.LogTraceMsgs("message1")("message2") // this is line 41 and (line 44 WAS ending func brace)
+	defer fn.LogTraceMsgs("message1")("message2") // this is line 80 and (line 83 WAS ending func brace)
 	fmt.Println("Goodbye Gopher")
-	/* Representative Output follows with lines wrapped:
-	   	  LogFN:2017/10/17 14:46:46 example_test.go:38 <wrapped>
-	   	       BegTrace:github.com/phcurtis/fn_test.Example_logtrace
-	   	  Hi There Gopher
-	   	  LogFN:2017/10/17 14:46:47 example_test.go:41 <wrapped>
-	   	       BegTrMsg:github.com/phcurtis/fn_test.Example_logtrace message1
-	   	  Goodbye Gopher
-	   	  LogFN:2017/10/17 14:46:47 example_test.go:44<:41> <wrapped>
-	   	       EndTrMsg:github.com/phcurtis/fn_test.Example_logtrace message2 Dur:82µs
-	         LogFN:2017/10/17 14:46:47 example_test.go:44<:38> <wrapped>
-	   	       EndTrace:github.com/phcurtis/fn_test.Example_logtrace Dur:1.000317s
+
+	/* Representative Output follows with lines wrapped and indented:
+	   LogFN: 2017/10/21 13:24:10 example_test.go:77      		<wrapped-indented>
+	   		BegTrace:fn_test.Example_logtrace
+	   Hi There Gopher
+	   LogFN: 2017/10/21 13:24:11 example_test.go:80      		<wrapped-indented>
+	   		BegTrMsg:fn_test.Example_logtrace message1
+	   Goodbye Gopher
+	   LogFN: 2017/10/21 13:24:11 example_test.go:83<:80> 		<wrapped-indented>
+	   		EndTrMsg:fn_test.Example_logtrace message2 Dur:301µs
+	   LogFN: 2017/10/21 13:24:11 example_test.go:83<:77> 		<wrapped-indented>
+	   		EndTrace:fn_test.Example_logtrace Dur:1.000603s
 	*/
 }

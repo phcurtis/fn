@@ -148,7 +148,7 @@ func LogPrefix() string {
 
 // [log] Trace Flags options referenced during LogTrace() and LogTraceMsgs()()
 const (
-	Trlogoff         = 1 << iota // if set return before any processing (faster than ioutil.Discard)
+	Trlogignore      = 1 << iota // if set return before any processing (faster than ioutil.Discard)
 	Trbegtime                    // print begin time
 	Trendtime                    // print end time
 	Trmicroseconds               // print microseconds on Tbegtime/Tendtime when active
