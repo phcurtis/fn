@@ -6,6 +6,7 @@ package fn_test
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -15,37 +16,6 @@ import (
 	"github.com/phcurtis/fn"
 )
 
-type f1Struct struct {
-	cnt    int
-	invoke int
-	total  int
-}
-
-var f1s f1Struct
-
-func f1(b *testing.B) {
-	if f1s.cnt < f1s.invoke {
-		f1s.cnt++
-		f1(b)
-	} else {
-		deep := strings.Count(fn.CStk(), "<--") + 1
-		if deep != f1s.total {
-			b.Fatalf("wrong invocations: deep:%d invoke:%d total:%d", deep, f1s.invoke, f1s.total)
-		}
-	}
-}
-func f1main(total, invoke int, b *testing.B) {
-	mintot := total - invoke + 3
-	if total < mintot || total > fn.LvlCStkMax {
-		b.Fatalf("total:%d is out of range[%d-%d]\n", total, mintot, fn.LvlCStkMax)
-	}
-	f1s.total = total
-	f1s.invoke = invoke - 1 // since f1main is already 1 deep
-	f1s.cnt = 1
-	if f1s.invoke-f1s.cnt > 0 {
-		f1(b)
-	}
-}
 func BenchmarkVarious(b *testing.B) {
 	defer func() {
 		fn.LogSetFlags(fn.LflagsDef)
@@ -72,7 +42,42 @@ func BenchmarkVarious(b *testing.B) {
 			fn.CStk()
 		}
 	})
+}
 
+type f1Struct struct {
+	cnt    int
+	invoke int
+	total  int
+}
+
+var f1s f1Struct
+
+func f1(b *testing.B) {
+	if f1s.cnt < f1s.invoke {
+		f1s.cnt++
+		f1(b)
+	} else {
+		deep := strings.Count(fn.CStk(), "<--") + 1
+		if deep != f1s.total {
+			b.Fatalf("wrong invocations: deep:%d invoke:%d total:%d", deep, f1s.invoke, f1s.total)
+		}
+	}
+}
+
+func f1main(total, invoke int, b *testing.B) {
+	mintot := total - invoke + 3
+	if total < mintot || total > fn.LvlCStkMax {
+		b.Fatalf("total:%d is out of range[%d-%d]\n", total, mintot, fn.LvlCStkMax)
+	}
+	f1s.total = total
+	f1s.invoke = invoke - 1 // since f1main is already 1 deep
+	f1s.cnt = 1
+	if f1s.invoke-f1s.cnt > 0 {
+		f1(b)
+	}
+}
+
+func Benchmark_cstkdepth(b *testing.B) {
 	deepAdj := strings.Count(fn.CStk(), "<--") + 1 // add 1 to separator count
 	tests := []struct {
 		name string
@@ -98,165 +103,182 @@ func BenchmarkVarious(b *testing.B) {
 	}
 }
 
+func routeTmpFile(b *testing.B) func() {
+	tmpfile, err := ioutil.TempFile("", "fn-benchmark-")
+	if err != nil {
+		b.Fatal(err)
+	}
+	if testing.Verbose() {
+		log.Printf("\nrouting output to tempfile:%s\n", tmpfile.Name())
+	}
+	fn.LogSetOutput(tmpfile)
+	return func() {
+		if testing.Verbose() {
+			log.Printf("\nremoving tempfile:%s\n", tmpfile.Name())
+		}
+		err := os.Remove(tmpfile.Name())
+		if err != nil {
+			log.Printf("\nerror removing %v err:%v\n", tmpfile.Name(), err)
+		}
+	}
+}
+
 func BenchmarkLog(b *testing.B) {
 	fn.SetPkgCfgDef(false)
-	func1 := func(lflags int, tempbn string) {
-		fn.LogSetFlags(lflags)
-		tmpfile, err := ioutil.TempFile("", tempbn)
-		if err != nil {
-			b.Fatal(err)
-		}
-		if testing.Verbose() {
-			log.Printf("\nrouting output to tempfile:%s\n", tmpfile.Name())
-		}
-		fn.LogSetOutput(tmpfile)
-		defer func() {
-			if testing.Verbose() {
-				log.Printf("\nremoving tempfile:%s\n", tmpfile.Name())
-			}
-			err := os.Remove(tmpfile.Name())
-			if err != nil {
-				log.Printf("\nerror removing %v err:%v\n", tmpfile.Name(), err)
-			}
-		}()
-	}
 
-	f := func(str string) string {
-		size := 40
+	f := func(num int, str string) string {
+		size := 38
+		str = fmt.Sprintf("#%02d:%s", num, str)
 		if len(str) < size {
 			str = str + strings.Repeat(".", size-len(str))
 		}
 		return str
 	}
 
-	b.Run(f("LogTrace()()"), func(b *testing.B) {
-		fn.LogSetTraceFlags(fn.TrFlagsDef)
-		func1(fn.LflagsDef, "logTrace-")
-		for i := 0; i < b.N; i++ {
-			// don't do a defer HERE because how benchmark apparatus works
-			//   -- it defers all the b.N defer calls until entire loop finishes
-			//   which makes timing huge.
-			//
-			fn.LogTrace()()
-		}
-	})
+	const (
+		LTF = iota
+		LTFmembuf
+		LTFDiscardLfdef
+		LTFDiscardLfoff
+		LTFTign
+		LCTFYes
+		LCTFNo
+		LCTFYesTign
 
-	b.Run(f("LogCondTrace(true)()"), func(b *testing.B) {
-		fn.LogSetTraceFlags(fn.TrFlagsDef)
-		func1(fn.LflagsDef, "logTrace-")
-		for i := 0; i < b.N; i++ {
-			// don't do a defer HERE because how benchmark apparatus works
-			//   -- it defers all the b.N defer calls until entire loop finishes
-			//   which makes timing huge.
-			//
-			fn.LogCondTrace(true)()
-		}
-	})
+		LTMF
+		LTMFmembuf
+		LTMFDiscardLfdef
+		LTMFDiscardLfoff
+		LTMFTign
+		LTFYesTign
+		LCTMFYes
+		LCTMFNo
+		LCTMFYesTign
+	)
+	tests := []struct {
+		num      int
+		ftype    int
+		logflags int
+		trflags  int
+	}{
+		{1, LCTMFYes, fn.LflagsDef, fn.TrFlagsDef},
+		{2, LCTFYes, fn.LflagsDef, fn.TrFlagsDef},
 
-	b.Run(f("LogCondTrace(false)()"), func(b *testing.B) {
-		fn.LogSetTraceFlags(fn.TrFlagsDef)
-		func1(fn.LflagsDef, "logTrace-")
-		for i := 0; i < b.N; i++ {
-			// don't do a defer HERE because how benchmark apparatus works
-			//   -- it defers all the b.N defer calls until entire loop finishes
-			//   which makes timing huge.
-			//
-			fn.LogCondTrace(false)()
-		}
-	})
+		{3, LTMF, fn.LflagsDef, fn.TrFlagsDef},
+		{4, LTF, fn.LflagsDef, fn.TrFlagsDef},
 
-	b.Run(f(`LogCondTrace(true)()-Trlogignore`), func(b *testing.B) {
-		fn.LogSetTraceFlags(fn.TrFlagsDef | fn.Trlogignore)
-		fn.LogSetFlags(fn.LflagsOff)
-		for i := 0; i < b.N; i++ {
-			// don't use defer HERE see comment above
-			fn.LogCondTrace(true)()
-		}
-	})
+		{5, LTMFmembuf, fn.LflagsDef, fn.TrFlagsDef},
+		{6, LTFmembuf, fn.LflagsDef, fn.TrFlagsDef},
 
-	b.Run(f(`LogTraceMsgs("msg1")("msg2")`), func(b *testing.B) {
-		fn.LogSetTraceFlags(fn.TrFlagsDef)
-		func1(fn.LflagsDef, "logTrace-")
-		for i := 0; i < b.N; i++ {
-			// don't use defer HERE see comment above
-			fn.LogTraceMsgs("msg1")("msg2")
-		}
-	})
+		{7, LTMFDiscardLfdef, fn.LflagsDef, fn.TrFlagsDef},
+		{8, LTFDiscardLfdef, fn.LflagsDef, fn.TrFlagsDef},
 
-	b.Run(f(`LogCondTraceMsgs(true,"msg1")("msg2")`), func(b *testing.B) {
-		fn.LogSetTraceFlags(fn.TrFlagsDef)
-		func1(fn.LflagsDef, "logTrace-")
-		for i := 0; i < b.N; i++ {
-			// don't use defer HERE see comment above
-			fn.LogCondTraceMsgs(true, "msg1")("msg2")
-		}
-	})
+		{9, LTMFDiscardLfoff, fn.LflagsOff, fn.TrFlagsDef},
+		{10, LTFDiscardLfoff, fn.LflagsOff, fn.TrFlagsDef},
 
-	b.Run(f(`LogCondTraceMsgs(false,"msg1")("msg2")`), func(b *testing.B) {
-		fn.LogSetTraceFlags(fn.TrFlagsDef)
-		func1(fn.LflagsDef, "logTrace-")
-		for i := 0; i < b.N; i++ {
-			// don't use defer HERE see comment above
-			fn.LogCondTraceMsgs(false, "msg1")("msg2")
-		}
-	})
+		{11, LCTMFYesTign, fn.LflagsDef, fn.TrFlagsDef | fn.Trlogignore},
+		{12, LCTFYesTign, fn.LflagsDef, fn.TrFlagsDef | fn.Trlogignore},
 
-	b.Run(f(`LogCondTraceMsgs(false,"msg1")("msg2")-ign`), func(b *testing.B) {
-		fn.LogSetTraceFlags(fn.Trlogignore)
-		func1(fn.LflagsDef, "logTrace-")
-		for i := 0; i < b.N; i++ {
-			// don't use defer HERE see comment above
-			fn.LogCondTraceMsgs(false, "msg1")("msg2")
-		}
-	})
+		{13, LTMFTign, fn.LflagsDef, fn.TrFlagsDef | fn.Trlogignore},
+		{14, LTFTign, fn.LflagsDef, fn.TrFlagsDef | fn.Trlogignore},
 
-	b.Run(f(`LogCondTrace(false)()-ign`), func(b *testing.B) {
-		fn.LogSetTraceFlags(fn.Trlogignore)
-		func1(fn.LflagsDef, "logTrace-")
-		for i := 0; i < b.N; i++ {
-			// don't use defer HERE see comment above
-			fn.LogCondTrace(false)()
-		}
-	})
+		{15, LCTMFNo, fn.LflagsDef, fn.TrFlagsDef},
+		{16, LCTFNo, fn.LflagsDef, fn.TrFlagsDef},
+	}
+	for _, v := range tests {
+		fn.SetPkgCfgDef(true) // set pkg config to default state
+		fn.LogSetFlags(v.logflags)
+		fn.LogSetTraceFlags(v.trflags)
+		var name string
+		switch v.ftype {
+		case LTF, LTFDiscardLfdef, LTFDiscardLfoff, LTFTign:
+			var suffix string
+			if v.ftype == LTFDiscardLfdef {
+				suffix = "-discard-lfdef"
+				fn.LogSetOutput(ioutil.Discard)
+			} else if v.ftype == LTFDiscardLfoff {
+				suffix = "-discard-lfoff"
+				fn.LogSetOutput(ioutil.Discard)
+			} else if v.ftype == LTFTign {
+				suffix = "-tign"
+			}
+			name = f(v.num, `LogTrace`+suffix)
+			b.Run(name, func(b *testing.B) {
+				if len(suffix) == 0 {
+					defer routeTmpFile(b)()
+				}
+				for i := 0; i < b.N; i++ {
+					fn.LogTrace()()
+				}
+			})
 
-	b.Run(f("LogTrace()()-Discard"), func(b *testing.B) {
-		fn.LogSetTraceFlags(fn.TrFlagsDef)
-		fn.LogSetOutput(ioutil.Discard)
-		fn.LogSetFlags(fn.LflagsOff)
-		for i := 0; i < b.N; i++ {
-			// don't use defer HERE see comment above
-			fn.LogTrace()()
-		}
-	})
-	b.Run(f(`LogTraceMsgs("msg1")("msg2")-Discard`), func(b *testing.B) {
-		fn.LogSetTraceFlags(fn.TrFlagsDef)
-		fn.LogSetOutput(ioutil.Discard)
-		fn.LogSetFlags(fn.LflagsOff)
-		for i := 0; i < b.N; i++ {
-			// don't use defer HERE see comment above
-			fn.LogTraceMsgs("msg1")("msg2")
-		}
-	})
+		case LTMF, LTMFDiscardLfdef, LTMFDiscardLfoff, LTMFTign:
+			var suffix string
+			if v.ftype == LTMFDiscardLfdef {
+				suffix = "-discard-lfdef"
+				fn.LogSetOutput(ioutil.Discard)
+			} else if v.ftype == LTMFDiscardLfoff {
+				suffix = "-discard-lfoff"
+				fn.LogSetOutput(ioutil.Discard)
+			} else if v.ftype == LTMFTign {
+				suffix = "-tign"
+			}
+			name = f(v.num, `LogTraceMsgs`+suffix)
+			b.Run(name, func(b *testing.B) {
+				if len(suffix) == 0 {
+					defer routeTmpFile(b)()
+				}
+				for i := 0; i < b.N; i++ {
+					fn.LogTraceMsgs("msg1")("msg2")
+				}
+			})
 
-	b.Run(f(`LogTraceMsgs("msg1")("msg2")-Trlogignore`), func(b *testing.B) {
-		fn.LogSetTraceFlags(fn.TrFlagsDef | fn.Trlogignore)
-		fn.LogSetFlags(fn.LflagsOff)
-		for i := 0; i < b.N; i++ {
-			// don't use defer HERE see comment above
-			fn.LogTraceMsgs("msg1")("msg2")
-		}
-	})
+		case LCTFNo, LCTFYes, LCTFYesTign:
+			do := (v.ftype == LCTFYes) || (v.ftype == LCTFYesTign)
+			name = f(v.num, fmt.Sprintf("LogCondTrace<%t>tign=%t",
+				do, (v.ftype == LCTFYesTign)))
+			b.Run(name, func(b *testing.B) {
+				defer routeTmpFile(b)()
+				for i := 0; i < b.N; i++ {
+					fn.LogCondTrace(do)()
+				}
+			})
 
-	b.Run(f(`LogTraceMsgs("msg1")("msg2")-toMembuf`), func(b *testing.B) {
-		fn.LogSetTraceFlags(fn.TrFlagsDef)
-		buf := bytes.NewBufferString("")
-		fn.LogSetOutput(buf)
-		fn.LogSetFlags(fn.LflagsDef)
+		case LCTMFNo, LCTMFYes, LCTMFYesTign:
+			do := (v.ftype == LCTMFYes) || (v.ftype == LCTMFYesTign)
+			name = f(v.num, fmt.Sprintf("LogCondTraceMsgs<%t>tign=%t",
+				do, (v.ftype == LCTMFYesTign)))
+			b.Run(name, func(b *testing.B) {
+				defer routeTmpFile(b)()
+				for i := 0; i < b.N; i++ {
+					fn.LogCondTraceMsgs(do, "msg1")("msg2")
+				}
+			})
 
-		//func1(fn.LflagsDef, "logTrace-")
-		for i := 0; i < b.N; i++ {
-			// don't use defer HERE see comment above
-			fn.LogTraceMsgs("msg1")("msg2")
+		case LTFmembuf:
+			name = f(v.num, "LogTrace-membuf")
+			buf := bytes.NewBufferString("")
+			fn.LogSetOutput(buf)
+			b.Run(name, func(b *testing.B) {
+				for i := 0; i < b.N; i++ {
+					fn.LogTrace()()
+				}
+			})
+
+		case LTMFmembuf:
+			name = f(v.num, "LogTraceMsgs-membuf")
+			buf := bytes.NewBufferString("")
+			fn.LogSetOutput(buf)
+			b.Run(name, func(b *testing.B) {
+				for i := 0; i < b.N; i++ {
+					fn.LogTraceMsgs("msg1")("msg2")
+				}
+			})
+
+		default:
+			log.Panic("unknown switch case in: " + fn.Cur())
 		}
-	})
+	}
+
+	fn.SetPkgCfgDef(true) // set pkg config to default state
 }
