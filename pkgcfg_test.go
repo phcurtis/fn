@@ -42,8 +42,7 @@ func Test_pkgcfggroup(t *testing.T) {
 
 	// #1 (PkgCfgDef)    verify PkgCfgDef returns expected values
 	want = pkgDefWant
-	wiowr = defiowr
-	got, giowr = fn.PkgCfgDef()
+	got, _ = fn.PkgCfgDef()
 	wantstr = pkgdefwantstr
 	gotstr = fmt.Sprintf("%+v", got)
 	if gotstr != wantstr {
@@ -98,7 +97,7 @@ func Test_pkgcfggroup(t *testing.T) {
 	fn.LogSetTraceFlags(0xbeef) //dec=48879
 	fn.LogSetAlignFile(11)
 	fn.LogSetAlignFunc(12)
-	got, giowr = fn.PkgCfg()
+	got, _ = fn.PkgCfg()
 	want = &fn.PkgCfgStruct{
 		LogFlags:      0xffff,
 		LogPrefix:     "ZyxAbcd",
