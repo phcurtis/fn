@@ -27,20 +27,3 @@ func Test_unexportFuncs(t *testing.T) {
 		})
 	}
 }
-
-var f2 func()
-
-func f1() {
-	f2()
-}
-
-func Test_logtr_panics(t *testing.T) {
-	f2 = LogTrace()
-	defer func() {
-		if p := recover(); p == nil {
-			t.Errorf("******   should have paniced ... due to calling " +
-				"returned  paired LogTrace func	in different func")
-		}
-	}()
-	f1()
-}
