@@ -200,7 +200,7 @@ func BenchmarkLog(b *testing.B) {
 				suffix = "-discard-lfoff"
 				fn.LogSetOutput(ioutil.Discard)
 			} else if v.ftype == LTFTign {
-				suffix = "-tign"
+				suffix = "-tign=true"
 			}
 			name = f(v.num, `LogTrace`+suffix)
 			b.Run(name, func(b *testing.B) {
@@ -221,7 +221,7 @@ func BenchmarkLog(b *testing.B) {
 				suffix = "-discard-lfoff"
 				fn.LogSetOutput(ioutil.Discard)
 			} else if v.ftype == LTMFTign {
-				suffix = "-tign"
+				suffix = "-tign=true"
 			}
 			name = f(v.num, `LogTraceMsgs`+suffix)
 			b.Run(name, func(b *testing.B) {
