@@ -123,17 +123,17 @@ func routeTmpFile(b *testing.B) func() {
 	}
 }
 
+func align(num int, str string) string {
+	size := 38
+	str = fmt.Sprintf("#%02d:%s", num, str)
+	if len(str) < size {
+		str = str + strings.Repeat(".", size-len(str))
+	}
+	return str
+}
+
 func BenchmarkLog(b *testing.B) {
 	fn.SetPkgCfgDef(false)
-
-	f := func(num int, str string) string {
-		size := 38
-		str = fmt.Sprintf("#%02d:%s", num, str)
-		if len(str) < size {
-			str = str + strings.Repeat(".", size-len(str))
-		}
-		return str
-	}
 
 	const (
 		LTF = iota
@@ -202,7 +202,7 @@ func BenchmarkLog(b *testing.B) {
 			} else if v.ftype == LTFTign {
 				suffix = "-tign=true"
 			}
-			name = f(v.num, `LogTrace`+suffix)
+			name = align(v.num, `LogTrace`+suffix)
 			b.Run(name, func(b *testing.B) {
 				if len(suffix) == 0 {
 					defer routeTmpFile(b)()
@@ -223,7 +223,7 @@ func BenchmarkLog(b *testing.B) {
 			} else if v.ftype == LTMFTign {
 				suffix = "-tign=true"
 			}
-			name = f(v.num, `LogTraceMsgs`+suffix)
+			name = align(v.num, `LogTraceMsgs`+suffix)
 			b.Run(name, func(b *testing.B) {
 				if len(suffix) == 0 {
 					defer routeTmpFile(b)()
@@ -235,7 +235,7 @@ func BenchmarkLog(b *testing.B) {
 
 		case LCTFNo, LCTFYes, LCTFYesTign:
 			do := (v.ftype == LCTFYes) || (v.ftype == LCTFYesTign)
-			name = f(v.num, fmt.Sprintf("LogCondTrace<%t>tign=%t",
+			name = align(v.num, fmt.Sprintf("LogCondTrace<%t>tign=%t",
 				do, (v.ftype == LCTFYesTign)))
 			b.Run(name, func(b *testing.B) {
 				defer routeTmpFile(b)()
@@ -246,7 +246,7 @@ func BenchmarkLog(b *testing.B) {
 
 		case LCTMFNo, LCTMFYes, LCTMFYesTign:
 			do := (v.ftype == LCTMFYes) || (v.ftype == LCTMFYesTign)
-			name = f(v.num, fmt.Sprintf("LogCondTraceMsgs<%t>tign=%t",
+			name = align(v.num, fmt.Sprintf("LogCondTraceMsgs<%t>tign=%t",
 				do, (v.ftype == LCTMFYesTign)))
 			b.Run(name, func(b *testing.B) {
 				defer routeTmpFile(b)()
@@ -256,7 +256,7 @@ func BenchmarkLog(b *testing.B) {
 			})
 
 		case LTFmembuf:
-			name = f(v.num, "LogTrace-membuf")
+			name = align(v.num, "LogTrace-membuf")
 			buf := bytes.NewBufferString("")
 			fn.LogSetOutput(buf)
 			b.Run(name, func(b *testing.B) {
@@ -266,7 +266,7 @@ func BenchmarkLog(b *testing.B) {
 			})
 
 		case LTMFmembuf:
-			name = f(v.num, "LogTraceMsgs-membuf")
+			name = align(v.num, "LogTraceMsgs-membuf")
 			buf := bytes.NewBufferString("")
 			fn.LogSetOutput(buf)
 			b.Run(name, func(b *testing.B) {
