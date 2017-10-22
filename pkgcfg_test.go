@@ -89,10 +89,9 @@ func Test_fetchedpkgconfig(t *testing.T) {
 	fn.LogSetOutput(wiowr)
 	fn.LogSetFlags(0xffff)
 	fn.LogSetPrefix("ZyxAbcd")
-	fn.LogSetTraceFlags(0xbeef) //dec=48879
+	fn.LogSetTraceFlags(0xbeef)
 	fn.LogSetAlignFile(11)
 	fn.LogSetAlignFunc(12)
-	got, _ := fn.PkgCfg()
 	want := &fn.PkgCfgStruct{
 		LogFlags:      0xffff,
 		LogPrefix:     "ZyxAbcd",
@@ -100,8 +99,7 @@ func Test_fetchedpkgconfig(t *testing.T) {
 		LogAlignFile:  11,
 		LogAlignFunc:  12,
 	}
-	var giowr io.Writer
-	got, giowr = fn.PkgCfg()
+	got, giowr := fn.PkgCfg()
 	gotstr := fmt.Sprintf("%+v", got)
 	wantstr := fmt.Sprintf("%+v", want)
 	if gotstr != wantstr {
