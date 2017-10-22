@@ -7,12 +7,66 @@ package fn_test
 import (
 	"bytes"
 	"io"
+	"io/ioutil"
 	"log"
+	"os"
 	"regexp"
 	"testing"
 
 	"github.com/phcurtis/fn"
 )
+
+func Test_logtr_panic1(t *testing.T) {
+	if !testing.Verbose() {
+		fn.LogSetOutput(ioutil.Discard) // to hide trace output
+	} else {
+		fn.LogSetOutput(os.Stderr) // so will see trace output and LogTrace stuff
+	}
+	if !testing.Verbose() {
+		log.SetOutput(ioutil.Discard) // toss log.Panic output
+	}
+	defer log.SetOutput(os.Stderr) // restore log output
+
+	defer func() {
+		var p interface{}
+		p = recover()
+		if testing.Verbose() {
+			log.Printf("panicErr:%v\n", p)
+		}
+		if p == nil {
+			t.Errorf("should have paniced ... panic invoked below ")
+		}
+		if testing.Verbose() {
+			log.Println("Recovered from panic")
+		}
+	}()
+
+	defer fn.LogTrace()()
+	panic("forcing a panic\n")
+}
+
+func Test_logtr_panic2(t *testing.T) {
+	fn.LogSetOutput(ioutil.Discard) // to hide trace output
+	defer fn.SetPkgCfgDef(true)     // restore defaults at end of this func
+
+	log.SetOutput(ioutil.Discard)  // toss log.Panic output
+	defer log.SetOutput(os.Stderr) // restore log output
+
+	endtrf := fn.LogTrace()
+
+	f := func() {
+		endtrf()
+	}
+	defer func() {
+		var p interface{}
+		p = recover()
+		if p == nil {
+			t.Errorf("should have paniced ... due to calling " +
+				"returned paired LogTrace func in different func")
+		}
+	}()
+	f() // this should throw a panic since calling end trace in different func
+}
 
 func readStdoutCapLine(b *bytes.Buffer) string {
 	const lfeed = '\n'
@@ -212,7 +266,7 @@ func Test_logfuncs(t *testing.T) {
 				f2(v.arg2)
 				gote = readStdoutCapLine(buf)
 			default:
-				panic("ftype not recognized")
+				log.Panic("ftype not recognized")
 			}
 			if testing.Verbose() {
 				log.SetFlags(0)
