@@ -201,6 +201,24 @@ func BenchmarkLog(b *testing.B) {
 		}
 	})
 
+	b.Run(f(`LogCondTraceMsgs(false,"msg1")("msg2")-ign`), func(b *testing.B) {
+		fn.LogSetTraceFlags(fn.Trlogignore)
+		func1(fn.LflagsDef, "logTrace-")
+		for i := 0; i < b.N; i++ {
+			// don't use defer HERE see comment above
+			fn.LogCondTraceMsgs(false, "msg1")("msg2")
+		}
+	})
+
+	b.Run(f(`LogCondTrace(false)()-ign`), func(b *testing.B) {
+		fn.LogSetTraceFlags(fn.Trlogignore)
+		func1(fn.LflagsDef, "logTrace-")
+		for i := 0; i < b.N; i++ {
+			// don't use defer HERE see comment above
+			fn.LogCondTrace(false)()
+		}
+	})
+
 	b.Run(f("LogTrace()()-Discard"), func(b *testing.B) {
 		fn.LogSetTraceFlags(fn.TrFlagsDef)
 		fn.LogSetOutput(ioutil.Discard)
