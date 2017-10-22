@@ -164,6 +164,14 @@ func Test_logfuncs(t *testing.T) {
 		{"tO", LCTMFNo, false, "", "", fn.LflagsOff, fn.Trlogignore,
 			"",
 			""},
+
+		{"tP", LCTMFYes, false, "", "", fn.LflagsOff, fn.Trlogignore,
+			"",
+			""},
+
+		{"tQ", LCTFYes, false, "", "", fn.LflagsOff, fn.Trlogignore,
+			"",
+			""},
 	}
 
 	var gotb, gote string

@@ -7,137 +7,130 @@ package fn_test
 import (
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"testing"
 
 	"github.com/phcurtis/fn"
 )
 
-func Test_pkgcfggroup(t *testing.T) {
-	fnpass := "Test_pkgcfggroup - test passed "
+var pkgCfgDefWant = &fn.PkgCfgStruct{
+	LogFlags:      fn.LflagsDef,
+	LogPrefix:     fn.LogPrefixDef,
+	LogTraceFlags: fn.TrFlagsDef,
+	LogAlignFile:  fn.LogAlignFileDef,
+	LogAlignFunc:  fn.LogAlignFuncDef,
+}
+var pkgCfgDefWantstr = fmt.Sprintf("%+v", pkgCfgDefWant)
+var noteStdio = fmt.Sprintf("\n    Note:os.Stdout:%v \n    Note:os.Stderr:%v", os.Stdout, os.Stderr)
 
-	// subTESTS:
-	// #1 (PkgCfgDef)            verify PkgCfgDef returns expected values
-	// #2 (PkgCfg)               verify individual setter funcs alter what makes up a PkgCfg
-	// #3 (SetPkgCfgDef/PkgCfg)) verify rewriting defaults matches what should be in the pkgCfgDef
-	// #4 (PkgCfg)               verify setter funcs mods match a corresponding fetched pkgCfg
-	// #5 (SetPkgCfg/PkgCfg))    verify setting a pkgcfg matches returned values from PkgCfg
-	// on completion of these test restore pkgCfgDef
+func TestPkgCfgDef(t *testing.T) {
+	// verify PkgCfgDef returns expected values
 
-	// prelims
-	var got, want *fn.PkgCfgStruct
-	var giowr, wiowr io.Writer
-	var gotstr, wantstr, pkgdefwantstr string
-	defiowr := fn.LogGetOutputDef()
-	note := fmt.Sprintf("\n    Note:os.Stdout:%v \n    Note:os.Stderr:%v", os.Stdout, os.Stderr)
-	pkgDefWant := &fn.PkgCfgStruct{
-		LogFlags:      fn.LflagsDef,
-		LogPrefix:     fn.LogPrefixDef,
-		LogTraceFlags: fn.TrFlagsDef,
-		LogAlignFile:  fn.LogAlignFileDef,
-		LogAlignFunc:  fn.LogAlignFuncDef,
-	}
-	pkgdefwantstr = fmt.Sprintf("%+v", pkgDefWant)
-
-	// #1 (PkgCfgDef)    verify PkgCfgDef returns expected values
-	want = pkgDefWant
-	got, _ = fn.PkgCfgDef()
-	wantstr = pkgdefwantstr
-	gotstr = fmt.Sprintf("%+v", got)
+	fn.SetPkgCfgDef(true) // set pkg config to (what should be) a known default state
+	got, giowr := fn.PkgCfgDef()
+	gotstr := fmt.Sprintf("%+v", got)
+	wantstr := pkgCfgDefWantstr
 	if gotstr != wantstr {
-		t.Errorf("#1: PkgCfgDef() incorrect:\n got:%s \nwant:%s\n", gotstr, wantstr)
+		t.Errorf("PkgCfgDef() incorrect:\n got:%s \nwant:%s\n", gotstr, wantstr)
 	}
-	if testing.Verbose() {
-		log.Println(fnpass + "#1 (PkgCfgDef)")
+	wiowr := fn.LogGetOutputDef()
+	if giowr != wiowr {
+		t.Errorf("PkgCfgDef() incorrect:\n got-iowr:%s \nwant-iowr:%s\n", giowr, wiowr)
 	}
 
-	// #2 (PkgCfg)       verify individual setter funcs alter what makes up a PkgCfg
+	fn.SetPkgCfgDef(true) // set pkg config to (what should be) a known default state
+}
+
+func TestPkgCfg(t *testing.T) {
+	// verify individual setter funcs alter what makes up a PkgCfg
+
+	fn.SetPkgCfgDef(true) // set pkg config to (what should be) a known default state
 	fn.LogSetAlignFile(5)
 	fn.LogSetAlignFunc(6)
 	fn.LogSetFlags(0xffffffff)
 	fn.LogSetPrefix("pRe")
 	fn.LogSetTraceFlags(0xdeadbeef) //3735928559
-	wiowr = os.Stderr
+	var wiowr io.Writer = os.Stderr
 	fn.LogSetOutput(wiowr)
-	got, giowr = fn.PkgCfg()
-	gotstr = fmt.Sprintf("%+v", got)
+	got, giowr := fn.PkgCfg()
+	gotstr := fmt.Sprintf("%+v", got)
+	wantstr := pkgCfgDefWantstr
 	if gotstr == wantstr {
-		t.Errorf("#2: PkgCfg() incorrect:\n got:%s \nwant:%s \n", gotstr, wantstr)
+		t.Errorf("PkgCfg() incorrect:\n got:%s \nwant:%s \n", gotstr, wantstr)
 	}
 	if giowr != wiowr {
-		t.Errorf("#2a: PkgCfg() incorrect:\n gotiowr:%x \nwantowr:%x %s\n",
-			giowr, wiowr, note)
+		t.Errorf("PkgCfg() incorrect:\n gotiowr:%x \nwantowr:%x %s\n",
+			giowr, wiowr, noteStdio)
 	}
-	if testing.Verbose() {
-		log.Println(fnpass + "#2 (PkgCfg)")
-	}
+	fn.SetPkgCfgDef(true) // set pkg config to (what should be) a known default state
+}
 
-	// #3 (SetPkgCfgDef/PkgCfg) verify rewriting the defaults matches what should be in the pkg defaults
-	fn.SetPkgCfgDef(true)
-	wiowr = defiowr
-	got, giowr = fn.PkgCfg()
-	gotstr = fmt.Sprintf("%+v", got)
+func TestSetPkgCfgDef(t *testing.T) {
+	// verify rewriting the defaults matches what should be in the pkg defaults
+
+	fn.SetPkgCfgDef(true) // set pkg config to (what should be) a known default state
+	wiowr := fn.LogGetOutputDef()
+	got, giowr := fn.PkgCfg()
+	gotstr := fmt.Sprintf("%+v", got)
+	wantstr := pkgCfgDefWantstr
 	if gotstr != wantstr {
-		t.Errorf("#3: SetPkgCfgDef() incorrect:\n got:%s \nwant:%s %s\n", gotstr, wantstr, note)
+		t.Errorf("SetPkgCfgDef() incorrect:\n got:%s \nwant:%s %s\n", gotstr, wantstr, noteStdio)
 	}
 	if giowr != wiowr {
-		t.Errorf("#3a: PkgCfgDef() incorrect:\n gotiowr:%x \nwantiowr:%x %s\n", giowr, wiowr, note)
+		t.Errorf("PkgCfgDef() incorrect:\n gotiowr:%x \nwantiowr:%x %s\n", giowr, wiowr, noteStdio)
 	}
-	if testing.Verbose() {
-		log.Println(fnpass + "#3 (SetPkgCfgDef/PkgCfg)")
-	}
+	fn.SetPkgCfgDef(true) // set pkg config to (what should be) a known default state
+}
 
-	// #4 (PkgCfg)       verify setter funcs mods  match a corresponding fetched pkgCfg
-	fn.SetPkgCfgDef(true)
-	wiowr = os.Stderr
+func Test_fetchedpkgconfig(t *testing.T) {
+	//  verify setter funcs mods  match a corresponding fetched pkgCfg
+	fn.SetPkgCfgDef(true) // set pkg config to (what should be) a known default state
+	wiowr := io.Writer(os.Stderr)
 	fn.LogSetOutput(wiowr)
 	fn.LogSetFlags(0xffff)
 	fn.LogSetPrefix("ZyxAbcd")
 	fn.LogSetTraceFlags(0xbeef) //dec=48879
 	fn.LogSetAlignFile(11)
 	fn.LogSetAlignFunc(12)
-	got, _ = fn.PkgCfg()
-	want = &fn.PkgCfgStruct{
+	got, _ := fn.PkgCfg()
+	want := &fn.PkgCfgStruct{
 		LogFlags:      0xffff,
 		LogPrefix:     "ZyxAbcd",
 		LogTraceFlags: 0xbeef, //dec=48879
 		LogAlignFile:  11,
 		LogAlignFunc:  12,
 	}
+	var giowr io.Writer
 	got, giowr = fn.PkgCfg()
-	gotstr = fmt.Sprintf("%+v", got)
-	wantstr = fmt.Sprintf("%+v", want)
+	gotstr := fmt.Sprintf("%+v", got)
+	wantstr := fmt.Sprintf("%+v", want)
 	if gotstr != wantstr {
-		t.Errorf(" #4: PkgCfgDef() incorrect:\n got:%s \nwant:%s \n", gotstr, wantstr)
+		t.Errorf("PkgCfgDef() incorrect:\n got:%s \nwant:%s \n", gotstr, wantstr)
 	}
 	if giowr != wiowr {
-		t.Errorf("#4a: PkgCfgDef() incorrect:\n gotiowr:%x \nwantiowr:%x %s\n", giowr, wiowr, note)
-	}
-	if testing.Verbose() {
-		log.Println(fnpass + "#4 (PkgCfg)")
+		t.Errorf("PkgCfgDef() incorrect:\n gotiowr:%x \nwantiowr:%x %s\n", giowr, wiowr, noteStdio)
 	}
 
-	// #5 (SetPkgCfg/PkgCfg)    verify setting a pkgcfg matches returned values from  PkgCfg
+	fn.SetPkgCfgDef(true) // set pkg config to (what should be) a known default state
+}
+
+func Test_pkgcfg_matches_setpkgcfg(t *testing.T) {
+	// verify setting a pkgcfg matches returned values from  PkgCfg
+
+	fn.SetPkgCfgDef(true) // set pkg config to (what should be) a known default state
+	want, _ := fn.PkgCfgDef()
+	wiowr := fn.LogGetOutputDef()
 	want.LogAlignFile = 8
-	wiowr = os.Stdout
 	fn.SetPkgCfg(want, wiowr)
-	got, giowr = fn.PkgCfg()
-	gotstr = fmt.Sprintf("%+v", got)
-	wantstr = fmt.Sprintf("%+v", want)
+	got, giowr := fn.PkgCfg()
+	gotstr := fmt.Sprintf("%+v", got)
+	wantstr := fmt.Sprintf("%+v", want)
 	if gotstr != wantstr {
-		t.Fatalf(" #5: SetPkgCfg() incorrect:\n got:%s \nwant:%s ", gotstr, wantstr)
+		t.Fatalf("SetPkgCfg() incorrect:\n got:%s \nwant:%s ", gotstr, wantstr)
 	}
 	if giowr != wiowr {
-		t.Fatalf("#5a: SetPkgCfg() incorrect:\n gotiowr:%x \nwantiowr:%x ", giowr, wiowr)
-	}
-	if testing.Verbose() {
-		log.Println(fnpass + "#5 (SetPkgCfg/PkgCfg)")
+		t.Fatalf("SetPkgCfg() incorrect:\n gotiowr:%x \nwantiowr:%x ", giowr, wiowr)
 	}
 
-	// reset settings to package defaults
-	fn.SetPkgCfgDef(true)
-	if testing.Verbose() {
-		log.Println("restored pkgCfgDef")
-	}
+	fn.SetPkgCfgDef(true) // set pkg config to (what should be) a known default state
 }
