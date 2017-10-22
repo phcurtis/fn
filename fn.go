@@ -17,7 +17,7 @@ import (
 )
 
 // Version of package fn
-const Version = 0.13
+const Version = 0.130
 
 // Level genealogy values for exported Lvl functions
 const (
