@@ -95,7 +95,7 @@ func helpltend(lvladj int, trlabel string, start time.Time, begFn, reffile, refl
 	endFn := Lvl(Lgpar + lvladj)
 	if begFn != endFn {
 		if strings.Contains(CStk(), "<--runtime.gopanic") {
-			log.Println("\nGOPANIC DETECTED --exiting '"+trlabel+"'(helpltend)>CStk:", CStk())
+			log.Println("GOPANIC DETECTED --exiting '"+trlabel+"'(helpltend)>CStk:", CStk())
 			log.Println("begFn:"+begFn+" != endFn:"+endFn, " reffile:", reffile, " reflnum", reflnum, "\n\n ")
 			return
 		}
