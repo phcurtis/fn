@@ -124,8 +124,7 @@ func routeTmpFile(b *testing.B) func() {
 	}
 }
 
-func align(num int, str string) string {
-	size := 38
+func align(num int, str string, size int) string {
 	str = fmt.Sprintf("#%02d:%s", num, str)
 	if len(str) < size {
 		str = str + strings.Repeat(".", size-len(str))
@@ -155,7 +154,16 @@ func BenchmarkLog(b *testing.B) {
 		LCTMFYes
 		LCTMFNo
 		LCTMFYesTign
+		LCTMPFYes
+		LTMPFYes
 	)
+	LCTFbstr := "LogCondTrace"
+	LCTMFbstr := "LogCondTraceMsgs"
+	LCTMPFbstr := "LogCondTraceMsgp"
+	LTFbstr := "LogTrace"
+	LTMFbstr := "LogTraceMsgs"
+	LTMPFbstr := "LogTraceMsgsp"
+
 	outdef := fn.LogGetOutputDef()
 	outdis := ioutil.Discard
 	membuf := bytes.NewBufferString("")
@@ -165,42 +173,44 @@ func BenchmarkLog(b *testing.B) {
 		ftype    int
 		logflags int
 		trflags  int
-		suffix   string
+		label    string
 		iowr     io.Writer
 	}{
-		{1, LCTMFYes, fn.LflagsDef, fn.TrFlagsDef, "<true>tign=false", outdef},
-		{2, LCTFYes, fn.LflagsDef, fn.TrFlagsDef, "<true>tign=false", outdef},
+		{1, LCTMFYes, fn.LflagsDef, fn.TrFlagsDef, LCTMFbstr + "<true>tign=false", outdef},
+		{2, LCTFYes, fn.LflagsDef, fn.TrFlagsDef, LCTFbstr + "<true>tign=false", outdef},
 
-		{3, LTMF, fn.LflagsDef, fn.TrFlagsDef, "", outdef},
-		{4, LTF, fn.LflagsDef, fn.TrFlagsDef, "", outdef},
+		{3, LCTMPFYes, fn.LflagsDef, fn.TrFlagsDef, LCTMPFbstr + "<true>tign=false", outdef},
+		{4, LTMPFYes, fn.LflagsDef, fn.TrFlagsDef, LTMPFbstr + "<true>tign=false", outdef},
 
-		{5, LTMFmembuf, fn.LflagsDef, fn.TrFlagsDef, "-membuf", membuf},
-		{6, LTFmembuf, fn.LflagsDef, fn.TrFlagsDef, "-membuf", membuf},
+		{5, LTMF, fn.LflagsDef, fn.TrFlagsDef, LTMFbstr + "", outdef},
+		{6, LTF, fn.LflagsDef, fn.TrFlagsDef, LTFbstr + "", outdef},
 
-		{7, LTMFDiscardLfdef, fn.LflagsDef, fn.TrFlagsDef, "-discard-lfdef", outdis},
-		{8, LTFDiscardLfdef, fn.LflagsDef, fn.TrFlagsDef, "-discard-lfdef", outdis},
+		{7, LTMFmembuf, fn.LflagsDef, fn.TrFlagsDef, LTMFbstr + "-membuf", membuf},
+		{8, LTFmembuf, fn.LflagsDef, fn.TrFlagsDef, LTFbstr + "-membuf", membuf},
 
-		{9, LTMFDiscardLfoff, fn.LflagsOff, fn.TrFlagsDef, "-discard-lfoff", outdis},
-		{10, LTFDiscardLfoff, fn.LflagsOff, fn.TrFlagsDef, "-discard-lfoff", outdis},
+		{9, LTMFDiscardLfdef, fn.LflagsDef, fn.TrFlagsDef, LTMFbstr + "-discard-lfdef", outdis},
+		{10, LTFDiscardLfdef, fn.LflagsDef, fn.TrFlagsDef, LTMFbstr + "-discard-lfdef", outdis},
 
-		{11, LCTMFYesTign, fn.LflagsDef, fn.TrFlagsDef | fn.Trlogignore, "<true>tign=true", outdef},
-		{12, LCTFYesTign, fn.LflagsDef, fn.TrFlagsDef | fn.Trlogignore, "<true>tign=true", outdef},
+		{11, LTMFDiscardLfoff, fn.LflagsOff, fn.TrFlagsDef, LTMFbstr + "-discard-lfoff", outdis},
+		{12, LTFDiscardLfoff, fn.LflagsOff, fn.TrFlagsDef, LTFbstr + "-discard-lfoff", outdis},
 
-		{13, LTMFTign, fn.LflagsDef, fn.TrFlagsDef | fn.Trlogignore, "-tign=true", outdef},
-		{14, LTFTign, fn.LflagsDef, fn.TrFlagsDef | fn.Trlogignore, "-tign=true", outdef},
+		{13, LCTMFYesTign, fn.LflagsDef, fn.TrFlagsDef | fn.Trlogignore, LCTMFbstr + "<true>tign=true", outdef},
+		{14, LCTFYesTign, fn.LflagsDef, fn.TrFlagsDef | fn.Trlogignore, LCTFbstr + "<true>tign=true", outdef},
 
-		{15, LCTMFNo, fn.LflagsDef, fn.TrFlagsDef, "<false>-tign=false", outdef},
-		{16, LCTFNo, fn.LflagsDef, fn.TrFlagsDef, "<false>-tign=false", outdef},
+		{15, LTMFTign, fn.LflagsDef, fn.TrFlagsDef | fn.Trlogignore, LTMFbstr + "-tign=true", outdef},
+		{16, LTFTign, fn.LflagsDef, fn.TrFlagsDef | fn.Trlogignore, LTFbstr + "-tign=true", outdef},
+
+		{17, LCTMFNo, fn.LflagsDef, fn.TrFlagsDef, LCTMFbstr + "<false>-tign=false", outdef},
+		{18, LCTFNo, fn.LflagsDef, fn.TrFlagsDef, LCTFbstr + "<false>-tign=false", outdef},
 	}
 	for _, v := range tests {
 		fn.SetPkgCfgDef(true) // set pkg config to default state
 		fn.LogSetFlags(v.logflags)
 		fn.LogSetTraceFlags(v.trflags)
 		fn.LogSetOutput(v.iowr)
-		var name string
+		name := align(v.num, v.label, 38)
 		switch v.ftype {
 		case LTF, LTFDiscardLfdef, LTFDiscardLfoff, LTFTign, LTFmembuf:
-			name = align(v.num, "LogTrace"+v.suffix)
 			b.Run(name, func(b *testing.B) {
 				if v.iowr == outdef {
 					defer routeTmpFile(b)()
@@ -210,19 +220,22 @@ func BenchmarkLog(b *testing.B) {
 				}
 			})
 
-		case LTMF, LTMFDiscardLfdef, LTMFDiscardLfoff, LTMFTign, LTMFmembuf:
-			name = align(v.num, "LogTraceMsgs"+v.suffix)
+		case LTMF, LTMFDiscardLfdef, LTMFDiscardLfoff, LTMFTign, LTMFmembuf, LTMPFYes:
+			msg2 := "msg2"
 			b.Run(name, func(b *testing.B) {
 				if v.iowr == outdef {
 					defer routeTmpFile(b)()
 				}
 				for i := 0; i < b.N; i++ {
-					fn.LogTraceMsgs("msg1")("msg2")
+					if v.ftype == LTMPFYes {
+						fn.LogTraceMsgp("msg1")(&msg2)
+					} else {
+						fn.LogTraceMsgs("msg1")(msg2)
+					}
 				}
 			})
 
 		case LCTFNo, LCTFYes, LCTFYesTign:
-			name = align(v.num, "LogCondTrace"+v.suffix)
 			b.Run(name, func(b *testing.B) {
 				defer routeTmpFile(b)()
 				for i := 0; i < b.N; i++ {
@@ -230,12 +243,16 @@ func BenchmarkLog(b *testing.B) {
 				}
 			})
 
-		case LCTMFNo, LCTMFYes, LCTMFYesTign:
-			name = align(v.num, "LogCondTraceMsgs"+v.suffix)
+		case LCTMFNo, LCTMFYes, LCTMFYesTign, LCTMPFYes:
+			msg2 := "msg2"
 			b.Run(name, func(b *testing.B) {
 				defer routeTmpFile(b)()
 				for i := 0; i < b.N; i++ {
-					fn.LogCondTraceMsgs(v.ftype != LCTMFNo, "msg1")("msg2")
+					if v.ftype == LCTMPFYes {
+						fn.LogCondTraceMsgp(true, "msg1")(&msg2)
+					} else {
+						fn.LogCondTraceMsgs(v.ftype != LCTMFNo, "msg1")(msg2)
+					}
 				}
 			})
 

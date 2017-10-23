@@ -45,9 +45,9 @@ func Test_forcepanichelplt(t *testing.T) {
 	defer log.SetOutput(os.Stderr) // restore log output
 
 	f := func() func() {
-		begTime, begFn, reffile, reflnum := helpltbeg(0, "BegTrace:", "")
+		begTime, begFn, reffile, reflnum := helpltbeg(0, LbegTraceLab, "")
 		return func() {
-			helpltend(0, "EndTrace:", begTime, begFn, "hack"+reffile, reflnum, "")
+			helpltend(0, LendTraceLab, begTime, begFn, "hack"+reffile, reflnum, "")
 		}
 	}
 

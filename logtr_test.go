@@ -112,12 +112,12 @@ func Test_logfuncs(t *testing.T) {
 	reTime := `\d\d:\d\d:\d\d`
 	reDateTime := reDate + ` .*` + reTime
 	reDateTimeMicro := reDateTime + `\.\d{6}`
-	reBegtr := `[ ]* BegTrace:`
-	reBegtrm := `[ ]* BegTrMsg:`
-	reBegtrp := `[ ]* BegTrMsp:`
-	reEndtr := `[ ]* EndTrace:`
-	reEndtrm := `[ ]* EndTrMsg:`
-	reEndtrp := `[ ]* EndTrMsp:`
+	reBegtr := `[ ]* ` + fn.LbegTraceLab
+	reBegtrm := `[ ]* ` + fn.LbegTraceMsgsLab
+	reBegtrp := `[ ]* ` + fn.LbegTraceMsgpLab
+	reEndtr := `[ ]* ` + fn.LendTraceLab
+	reEndtrm := `[ ]* ` + fn.LendTraceMsgsLab
+	reEndtrp := `[ ]* ` + fn.LendTraceMsgpLab
 	reMsg2dur := ` msg2 Dur:\d{1,}[^ ]*`
 	tests := []struct {
 		name    string
@@ -132,12 +132,12 @@ func Test_logfuncs(t *testing.T) {
 		wante   string
 	}{
 		{"t1", LTF, false, false, "", "", fn.LflagsOff, fn.TrFlagsOff,
-			"LogFN: BegTrace:" + fullFN,
-			"LogFN: EndTrace:" + fullFN},
+			"LogFN: " + fn.LbegTraceLab + fullFN,
+			"LogFN: " + fn.LendTraceLab + fullFN},
 
 		{"t2", LTMF, false, false, "msg1", "msg2", fn.LflagsOff, fn.TrFlagsOff,
-			"LogFN: BegTrMsg:" + fullFN + " msg1",
-			"LogFN: EndTrMsg:" + fullFN + " msg2"},
+			"LogFN: " + fn.LbegTraceMsgsLab + fullFN + " msg1",
+			"LogFN: " + fn.LendTraceMsgsLab + fullFN + " msg2"},
 
 		{"t3", LTF, false, true, "", "", log.Lshortfile, fn.TrFlagsOff,
 			"LogFN: " + rexpfn1 + `:\d{1,}` + reBegtr + fullFN + "[ ]*$",
