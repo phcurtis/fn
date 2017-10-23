@@ -20,6 +20,16 @@ const (
 	LflagsDef   = LflagsCmn                                 // default log.logger log flags
 )
 
+// Trace message labels used during LogTraceZZZ where ZZZ is blank/Msgs/Msgp"
+const (
+	LbegTraceLab     = "BegTrace:"
+	LendTraceLab     = "EndTrace:"
+	LbegTraceMsgsLab = "BegTrMsg:"
+	LendTraceMsgsLab = "EndTrMsg:"
+	LbegTraceMsgpLab = "BegTrMsp:"
+	LendTraceMsgpLab = "EndTrMsp:"
+)
+
 var gopathsrc string
 
 var logOutputDef *os.File

@@ -162,6 +162,7 @@ func helpltbeg(lvladj int, trlabel string, begMsg string) (begTime time.Time, be
 //	Idiomatic usage at func start: defer fn.LogTrace()()
 //  NOTE that the pairing return function uses the configurations that are at
 //  its time of execution which [you] may have changed since the begin portion.
+//  Also see LogCondTrace.
 func LogTrace() func() {
 	muLogt.Lock()
 	if logTraceFlags&Trlogignore > 0 {
@@ -170,9 +171,9 @@ func LogTrace() func() {
 	}
 	muLogt.Unlock()
 
-	begTime, begFn, reffile, reflnum := helpltbeg(0, "BegTrace:", "")
+	begTime, begFn, reffile, reflnum := helpltbeg(0, LbegTraceLab, "")
 	return func() {
-		helpltend(0, "EndTrace:", begTime, begFn, reffile, reflnum, "")
+		helpltend(0, LendTraceLab, begTime, begFn, reffile, reflnum, "")
 	}
 }
 
@@ -190,9 +191,9 @@ func LogCondTrace(cond bool) func() {
 	}
 	muLogt.Unlock()
 
-	begTime, begFn, reffile, reflnum := helpltbeg(0, "BegTrace:", "")
+	begTime, begFn, reffile, reflnum := helpltbeg(0, LbegTraceLab, "")
 	return func() {
-		helpltend(0, "EndTrace:", begTime, begFn, reffile, reflnum, "")
+		helpltend(0, LendTraceLab, begTime, begFn, reffile, reflnum, "")
 	}
 }
 
@@ -210,9 +211,9 @@ func LogCondTraceMsgs(cond bool, begMsg string) func(endMsg string) {
 	}
 	muLogt.Unlock()
 
-	begTime, begFn, reffile, reflnum := helpltbeg(0, "BegTrMsg:", begMsg)
+	begTime, begFn, reffile, reflnum := helpltbeg(0, LbegTraceMsgsLab, begMsg)
 	return func(endMsg string) {
-		helpltend(0, "EndTrMsg:", begTime, begFn, reffile, reflnum, endMsg)
+		helpltend(0, LendTraceMsgsLab, begTime, begFn, reffile, reflnum, endMsg)
 	}
 }
 
@@ -225,6 +226,7 @@ func LogCondTraceMsgs(cond bool, begMsg string) func(endMsg string) {
 //	Idiomatic usage at func start: defer fn.LogTraceMsgs("begMsg")("endMsg")
 //  NOTE that the pairing return function uses the configurations that are at
 //  its time of execution which [you] may have changed since the begin portion.
+//  Also see LogTraceMsgp, LogCondTraceMsgs, LogCondTraceMsgp.
 func LogTraceMsgs(begMsg string) func(endMsg string) {
 	muLogt.Lock()
 	if logTraceFlags&Trlogignore > 0 {
@@ -233,8 +235,42 @@ func LogTraceMsgs(begMsg string) func(endMsg string) {
 	}
 	muLogt.Unlock()
 
-	begTime, begFn, reffile, reflnum := helpltbeg(0, "BegTrMsg:", begMsg)
+	begTime, begFn, reffile, reflnum := helpltbeg(0, LbegTraceMsgsLab, begMsg)
 	return func(endMsg string) {
-		helpltend(0, "EndTrMsg:", begTime, begFn, reffile, reflnum, endMsg)
+		helpltend(0, LendTraceMsgsLab, begTime, begFn, reffile, reflnum, endMsg)
+	}
+}
+
+// LogTraceMsgp - same as LogTraceMsgs however endMsg is a pointer to a string.
+func LogTraceMsgp(begMsg string) func(endMsg *string) {
+	muLogt.Lock()
+	if logTraceFlags&Trlogignore > 0 {
+		muLogt.Unlock()
+		return func(*string) {}
+	}
+	muLogt.Unlock()
+
+	begTime, begFn, reffile, reflnum := helpltbeg(0, LbegTraceMsgpLab, begMsg)
+	return func(endMsg *string) {
+		helpltend(0, LendTraceMsgpLab, begTime, begFn, reffile, reflnum, *endMsg)
+	}
+}
+
+// LogCondTraceMsgp - same as LogCondTraceMsgs however endMsg is a pointer to a string.
+func LogCondTraceMsgp(cond bool, begMsg string) func(endMsg *string) {
+	if !cond {
+		return func(*string) {}
+	}
+
+	muLogt.Lock()
+	if logTraceFlags&Trlogignore > 0 {
+		muLogt.Unlock()
+		return func(*string) {}
+	}
+	muLogt.Unlock()
+
+	begTime, begFn, reffile, reflnum := helpltbeg(0, LbegTraceMsgpLab, begMsg)
+	return func(endMsg *string) {
+		helpltend(0, LendTraceMsgpLab, begTime, begFn, reffile, reflnum, *endMsg)
 	}
 }
