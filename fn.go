@@ -17,7 +17,7 @@ import (
 )
 
 // Version of package fn
-const Version = 0.140
+const Version = 0.150
 
 // Level genealogy values for exported Lvl functions
 const (
@@ -37,7 +37,10 @@ const (
 	nbase nameform = 1 // filepath.Base form
 )
 
-const cStkEndPfix = "<EndOfCallStack:lvlll-lvl="
+//const cStkEndPfix = "<EndOfCallStack:lvlll-lvl="
+
+// CStkEndPfix - sentinel prefix value denoting end of call stack
+const CStkEndPfix = "<EndOfCallStack:"
 
 // low level func getting a given 'lvl' func name
 func lvlll(lvl int, nform nameform) string {
@@ -45,11 +48,12 @@ func lvlll(lvl int, nform nameform) string {
 	pc := make([]uintptr, 10)
 	runtime.Callers(baselvl+lvl, pc)
 	name := runtime.FuncForPC(pc[0]).Name()
-	if nform == nbase {
-		name = filepath.Base(name)
-	}
 	if name == "" {
-		name = fmt.Sprintf(cStkEndPfix+"%d>", lvl)
+		name = fmt.Sprintf(CStkEndPfix+"%d>", lvl)
+	} else {
+		if nform == nbase {
+			name = filepath.Base(name)
+		}
 	}
 	return name
 }
@@ -59,6 +63,73 @@ func lvlll(lvl int, nform nameform) string {
 // lvl=Lgpar or lvl=2 for GrandParent and so on.
 func Lvl(lvl int) string {
 	return lvlll(lvl+Lpar, nfull)
+}
+
+// flags used in funcs LvlInfoNNN.
+const (
+	Ifnbase = 1 << iota
+	Ifnfull
+	Ifileshort
+	Ifilelong
+	Ifuncnoparens
+	Ifilenogps
+	IflagsDef   = Ifnbase | Ifilenogps
+	IflagsCmn   = Ifnbase | Ifilenogps
+	IflagsShort = Ifnbase | Ifileshort
+)
+
+// LvlInfo - returns level info details, filename, linenum and func name
+// adjusted according to flags value.
+func LvlInfo(lvl int, flags int) (file string, line int, name string) {
+	const baselvl = 2
+	pc := make([]uintptr, 10)
+	runtime.Callers(baselvl+lvl, pc)
+	name = runtime.FuncForPC(pc[0]).Name()
+	if name == "" {
+		name = fmt.Sprintf(CStkEndPfix+"%d>", lvl)
+	} else {
+		if flags&Ifnbase > 0 {
+			name = filepath.Base(name)
+		}
+		if flags&Ifuncnoparens == 0 {
+			name += "()"
+		}
+	}
+	var ok bool
+	_, file, line, ok = runtime.Caller(baselvl + lvl - 1)
+	if !ok {
+		file = "???"
+		line = 0
+	}
+	if flags&Ifileshort > 0 {
+		file = filepath.Base(file)
+	} else if flags&Ifilenogps > 0 {
+		if strings.HasPrefix(file, gopathsrc) {
+			file = file[len(gopathsrc):]
+		}
+	}
+	return file, line, name
+}
+
+// LvlInfoStr - returns level one string containing info details,
+// filename, linenum and func name adjusted according to flags value.
+func LvlInfoStr(lvl int, flags int) string {
+	file, line, name := LvlInfo(lvl+1, flags)
+	return fmt.Sprintf("%s:%d:%s", file, line, name)
+}
+
+// LvlInfoCmn - returns level one string containing info details,
+// filename, linenum and func name adjusted to IflagsCmn flags value.
+func LvlInfoCmn(lvl int) string {
+	file, line, name := LvlInfo(lvl+1, IflagsCmn)
+	return fmt.Sprintf("%s:%d:%s", file, line, name)
+}
+
+// LvlInfoShort - returns level one string containing info details,
+// filename, linenum and func name adjusted to IflagsShort flags value.
+func LvlInfoShort(lvl int) string {
+	file, line, name := LvlInfo(lvl+1, IflagsShort)
+	return fmt.Sprintf("%s:%d:%s", file, line, name)
 }
 
 // LvlBase - returns the filepath.Base form of func name relative to
@@ -88,7 +159,8 @@ func LvlCStk(lvl int) string {
 	var name, sep string
 	for i := lvl; i <= LvlCStkMax; i++ {
 		cname := Lvl(i + Lpar)
-		if strings.HasPrefix(cname, cStkEndPfix) {
+		//fmt.Printf("cname(%d):%s\n", i, cname)
+		if strings.HasPrefix(cname, CStkEndPfix) {
 			break
 		}
 		name += sep + cname
