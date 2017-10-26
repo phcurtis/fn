@@ -66,7 +66,7 @@ func f1(b *testing.B) {
 }
 
 func f1main(total, invoke int, b *testing.B) {
-	mintot := total - invoke + 3
+	mintot := 4
 	if total < mintot || total > fn.LvlCStkMax {
 		b.Fatalf("total:%d is out of range[%d-%d]\n", total, mintot, fn.LvlCStkMax)
 	}
