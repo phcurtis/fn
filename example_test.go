@@ -93,3 +93,51 @@ func Example_logtrace() {
 	   		EndTrace:fn_test.Example_logtrace Dur:1.000603s
 	*/
 }
+
+func ExampleLvlInfo() {
+	var file string
+	var line int
+	var name string
+	file, line, name = fn.LvlInfo(0, fn.IflagsDef) // line 98
+	fmt.Printf("fn.LvlInfo(0,fn.IflagsDef): \nfile:%s \nline:%v \nname:%s\n\n", file, line, name)
+
+	file, line, name = fn.LvlInfo(0, fn.Ifilelong|fn.Ifnfull) // line 101
+	fmt.Printf("fn.LvlInfo(0,fn.Ifilelong|fn.Ifnfull): \nfile:%s \nline:%v \nname:%s\n\n", file, line, name)
+
+	file, line, name = fn.LvlInfo(0, fn.Ifilelong|fn.Ifilenogps) // line 104
+	fmt.Printf("fn.LvlInfo(0,fn.Ifilelong|fn.Ifilenogps): \nfile:%s \nline:%v \nname:%s\n\n", file, line, name)
+
+	fmt.Printf("fn.LvlInfo(0, fn.IflagsDef):%s\n", fn.LvlInfoStr(0, fn.IflagsDef)) // 107
+
+	// Representative Output:
+	// fn.LvlInfo(0,fn.IflagsDef):
+	// file:github.com/phcurtis/fn/example_test.go
+	// line:98
+	// name:fn_test.ExampleLvlInfo()
+	//
+	// fn.LvlInfo(0,fn.Ifilelong|fn.Ifnfull):
+	// file:/home/paul/go/src/github.com/phcurtis/fn/example_test.go
+	// line:101
+	// name:github.com/phcurtis/fn_test.ExampleLvlInfo()
+	//
+	// fn.LvlInfo(0,fn.Ifilelong|fn.Ifilenogps):
+	// file:github.com/phcurtis/fn/example_test.go
+	// line:104
+	// name:github.com/phcurtis/fn_test.ExampleLvlInfo()
+	//
+	// fn.LvlInfo(0,fn.IflagsDef):
+	// github.com/phcurtis/fn/example_test.go:107:fn_test.ExampleLvlInfo()
+	//
+}
+
+func Example_lvlinfocmn() {
+	fmt.Printf(fn.LvlInfoCmn(0)) // line 112
+	// Representative Output:
+	// github.com/phcurtis/fn/example_test.go:112:fn_test.ExampleLvlInfoCmn()
+}
+
+func Example_lvlinfoshort() { // line 117
+	fmt.Printf(fn.LvlInfoShort(0))
+	// Representative Output:
+	// example_test.go:117:fn_test.ExampleLvlInfoShort()
+}
