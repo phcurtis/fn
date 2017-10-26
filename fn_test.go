@@ -6,6 +6,7 @@ package fn_test
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -81,5 +82,88 @@ func Test_cstkgroup(t *testing.T) {
 				t.Errorf("%s:\n     got:%s \nwantPfix:%s \n", v.name, got, v.wantPfix)
 			}
 		})
+	}
+}
+
+func TestLvlInfo(t *testing.T) {
+	filenamegps := "/home/paul/go/src/"
+	filenameshort := "fn_test.go"
+	filenamenogps := "github.com/phcurtis/fn" + "/" + filenameshort
+	filename := filenamegps + filenamenogps
+	funcname := "TestLvlInfo.func1"
+	baseFN := pkgName + "." + funcname
+	fullFN := "github.com/phcurtis/" + baseFN
+	parens := "()"
+
+	tests := []struct {
+		name   string
+		lvl    int
+		iflags int
+		wfile  string
+		wname  string
+		prefix bool
+	}{
+		{"1-Ifnbase", 0, fn.Ifnbase,
+			filename, baseFN + parens, false},
+		{"2-Ifnbase|Ifilenogps", 0, fn.Ifnbase | fn.Ifilenogps,
+			filenamenogps, baseFN + parens, false},
+		{"3-Ifileshort", 0, fn.Ifileshort,
+			filenameshort, fullFN + parens, false},
+		{"4-Ifnbase", 3, fn.IflagsDef, "???", fn.CStkEndPfix, true},
+	}
+	for _, v := range tests {
+		var file string
+		var line int
+		var name string
+		t.Run(v.name, func(t *testing.T) {
+			file, line, name = fn.LvlInfo(v.lvl, v.iflags)
+			if file != v.wfile {
+				t.Errorf("%s: fn.LvlInfo(%d,%d): \n filegot:%s \nfilewant:%s \n",
+					v.name, v.lvl, v.iflags, file, v.wfile)
+			} else if name != v.wname && (!v.prefix) {
+				t.Errorf("%s: fn.LvlInfo(%d,%d): \n namegot:%s \nnamewant:%s \n",
+					v.name, v.lvl, v.iflags, name, v.wname)
+			} else if line < 1 && v.lvl < 1 {
+				t.Errorf("%s: fn.LvlInfo(%d,%d): \n linegot:%d \nlinewant:> 0\n",
+					v.name, v.lvl, v.iflags, line)
+			} else if v.prefix && strings.HasPrefix(v.wname, name) {
+				t.Errorf("%s: fn.LvlInfo(%d,%d): \n prefixnamegot:%s \nprefixnamewant:%s \n",
+					v.name, v.lvl, v.iflags, name, v.wname)
+			}
+		})
+	}
+}
+
+func Test_lvlinfostrings(t *testing.T) {
+	//filenamegps := "/home/paul/go/src/"
+	filenameshort := "fn_test.go"
+	filenamenogps := "github.com/phcurtis/fn" + "/" + filenameshort
+	funcname := "fn_test.Test_lvlinfostrings()"
+
+	tests := []struct {
+		name     string
+		got      string
+		wantfile string
+		wantfunc string
+	}{
+		{"fn.LvlInfoStr(0)..:", fn.LvlInfoStr(0, fn.IflagsDef), filenamenogps, funcname},
+		{"fn.LvlInfoCmn(0)..:", fn.LvlInfoCmn(0), filenamenogps, funcname},
+		{"fn.LvlInfoShort(0):", fn.LvlInfoShort(0), filenameshort, funcname},
+	}
+	for _, v := range tests {
+		parts := strings.Split(v.got, ":")
+		if len(parts) != 3 {
+			t.Errorf("number parts wrong")
+		}
+		if parts[0] != v.wantfile {
+			t.Errorf("gotfilename:%q wantfilenamebad line number:%q", parts[0], v.wantfile)
+		}
+		line, err := strconv.Atoi(parts[1])
+		if err != nil || line < 1 {
+			t.Errorf("bad line number:%q", parts[1])
+		}
+		if parts[2] != v.wantfunc {
+			t.Errorf("gotfuncname:%q wantfuncname:%q", parts[2], v.wantfunc)
+		}
 	}
 }
