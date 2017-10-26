@@ -104,6 +104,32 @@ func Benchmark_cstkdepth(b *testing.B) {
 	}
 }
 
+func BenchmarkLvlInfo(b *testing.B) {
+	b.Run("fn.LvlInfo(0,fn.IflagsDef)", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			fn.LvlInfo(0, fn.IflagsDef)
+		}
+	})
+
+	b.Run("fn.LvlInfoStr(0,fn.IflagsDef)", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			fn.LvlInfoStr(0, fn.IflagsDef)
+		}
+	})
+
+	b.Run("fn.LvlInfoCmn(0)", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			fn.LvlInfoCmn(0)
+		}
+	})
+
+	b.Run("fn.LvlInfoShort(0)", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			fn.LvlInfoShort(0)
+		}
+	})
+}
+
 func routeTmpFile(b *testing.B) func() {
 	tmpfile, err := ioutil.TempFile("", "fn-benchmark-")
 	if err != nil {
