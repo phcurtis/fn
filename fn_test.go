@@ -86,10 +86,8 @@ func Test_cstkgroup(t *testing.T) {
 }
 
 func TestLvlInfo(t *testing.T) {
-	filenamegps := "/home/paul/go/src/"
 	filenameshort := "fn_test.go"
 	filenamenogps := "github.com/phcurtis/fn" + "/" + filenameshort
-	filename := filenamegps + filenamenogps
 	funcname := "TestLvlInfo.func1"
 	baseFN := pkgName + "." + funcname
 	fullFN := "github.com/phcurtis/" + baseFN
@@ -103,13 +101,11 @@ func TestLvlInfo(t *testing.T) {
 		wname  string
 		prefix bool
 	}{
-		{"1-Ifnbase", 0, fn.Ifnbase,
-			filename, baseFN + parens, false},
-		{"2-Ifnbase|Ifilenogps", 0, fn.Ifnbase | fn.Ifilenogps,
+		{"1-Ifnbase|Ifilenogps", 0, fn.Ifnbase | fn.Ifilenogps,
 			filenamenogps, baseFN + parens, false},
-		{"3-Ifileshort", 0, fn.Ifileshort,
+		{"2-Ifileshort", 0, fn.Ifileshort,
 			filenameshort, fullFN + parens, false},
-		{"4-Ifnbase", 3, fn.IflagsDef, "???", fn.CStkEndPfix, true},
+		{"3-Ifnbase", 5, fn.IflagsDef, "???", fn.CStkEndPfix, true},
 	}
 	for _, v := range tests {
 		var file string
