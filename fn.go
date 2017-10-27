@@ -17,7 +17,7 @@ import (
 )
 
 // Version of package fn
-const Version = 0.200
+const Version = 0.201
 
 // Level genealogy values for exported Lvl functions
 const (
@@ -49,7 +49,7 @@ func lvlll(lvl int, nform nameform) string {
 	runtime.Callers(baselvl+lvl, pc)
 	name := runtime.FuncForPC(pc[0]).Name()
 	if name == "" {
-		name = fmt.Sprintf(CStkEndPfix+"%d>", lvl)
+		name = fmt.Sprintf(CStkEndPfix+"lvlll-lvl=%d>", lvl)
 	} else {
 		if nform == nbase {
 			name = filepath.Base(name)
@@ -113,21 +113,21 @@ func LvlInfo(lvl int, flags int) (file string, line int, name string) {
 
 // LvlInfoStr - returns level one string containing info details,
 // filename, linenum and func name adjusted according to flags value.
-func LvlInfoStr(lvl int, flags int) string {
+func LvlInfoStr(lvl int, flags int) (fileLineName string) {
 	file, line, name := LvlInfo(lvl+1, flags)
 	return fmt.Sprintf("%s:%d:%s", file, line, name)
 }
 
 // LvlInfoCmn - returns level one string containing info details,
 // filename, linenum and func name adjusted to IflagsCmn flags value.
-func LvlInfoCmn(lvl int) string {
+func LvlInfoCmn(lvl int) (fileLineName string) {
 	file, line, name := LvlInfo(lvl+1, IflagsCmn)
 	return fmt.Sprintf("%s:%d:%s", file, line, name)
 }
 
 // LvlInfoShort - returns level one string containing info details,
 // filename, linenum and func name adjusted to IflagsShort flags value.
-func LvlInfoShort(lvl int) string {
+func LvlInfoShort(lvl int) (fileLineName string) {
 	file, line, name := LvlInfo(lvl+1, IflagsShort)
 	return fmt.Sprintf("%s:%d:%s", file, line, name)
 }
