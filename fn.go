@@ -17,7 +17,7 @@ import (
 )
 
 // Version of package fn
-const Version = 0.201
+const Version = 0.202
 
 // Level genealogy values for exported Lvl functions
 const (
@@ -37,10 +37,10 @@ const (
 	nbase nameform = 1 // filepath.Base form
 )
 
-//const cStkEndPfix = "<EndOfCallStack:lvlll-lvl="
-
 // CStkEndPfix - sentinel prefix value denoting end of call stack
 const CStkEndPfix = "<EndOfCallStack:"
+
+const cStkEndPfix = CStkEndPfix + "lvlll-lvl="
 
 // low level func getting a given 'lvl' func name
 func lvlll(lvl int, nform nameform) string {
@@ -49,7 +49,7 @@ func lvlll(lvl int, nform nameform) string {
 	runtime.Callers(baselvl+lvl, pc)
 	name := runtime.FuncForPC(pc[0]).Name()
 	if name == "" {
-		name = fmt.Sprintf(CStkEndPfix+"lvlll-lvl=%d>", lvl)
+		name = fmt.Sprintf(cStkEndPfix+"%d>", lvl)
 	} else {
 		if nform == nbase {
 			name = filepath.Base(name)
@@ -86,7 +86,7 @@ func LvlInfo(lvl int, flags int) (file string, line int, name string) {
 	runtime.Callers(baselvl+lvl, pc)
 	name = runtime.FuncForPC(pc[0]).Name()
 	if name == "" {
-		name = fmt.Sprintf(CStkEndPfix+"%d>", lvl)
+		name = fmt.Sprintf(cStkEndPfix+"%d>", lvl)
 	} else {
 		if flags&Ifnbase > 0 {
 			name = filepath.Base(name)
