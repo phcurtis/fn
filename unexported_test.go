@@ -6,7 +6,6 @@ package fn
 
 import (
 	"io/ioutil"
-	"log"
 	"os"
 	"testing"
 )
@@ -29,6 +28,14 @@ func Test_unexportFuncs(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("strMinWidth", func(t *testing.T) {
+		got := strMinWidth("12345", 10)
+		want := "12345     "
+		if got != want {
+			t.Errorf("\n got:%s \nwant:%s", got, want)
+		}
+	})
 }
 
 func Test_forcepanichelplt(t *testing.T) {
@@ -37,12 +44,8 @@ func Test_forcepanichelplt(t *testing.T) {
 	} else {
 		LogSetOutput(os.Stderr) // so will see trace output and LogTrace stuff
 	}
-	if !testing.Verbose() {
-		log.SetOutput(ioutil.Discard) // toss log.Panic output
-	}
 
-	defer SetPkgCfgDef(true)       // restore defaults at end of this func
-	defer log.SetOutput(os.Stderr) // restore log output
+	defer SetPkgCfgDef(true) // restore defaults at end of this func
 
 	f := func() func() {
 		begTime, begFn, reffile, reflnum := helpltbeg(0, LbegTraceLab, "")
@@ -55,13 +58,13 @@ func Test_forcepanichelplt(t *testing.T) {
 		var p interface{}
 		p = recover()
 		if testing.Verbose() {
-			log.Printf("panicErr:%v\n", p)
+			t.Logf("panicErr:%v\n", p)
 		}
 		if p == nil {
 			t.Errorf("should have paniced ... due to hacking reffile ")
 		}
 		if testing.Verbose() {
-			log.Println("Recovered from panic")
+			t.Logf("%s\n", "Recovered from panic")
 		}
 	}()
 
