@@ -55,7 +55,7 @@ func helplt(lvl int, msg, reffile, reflnum string) (newReffile, newReflnum strin
 		// possible by passing that portion and invoking in
 		// another function which package fn does NOT support.
 		if reffile != "" && reffile != newReffile {
-			log.Panic(errors.New("reffile:" + reffile + " != newReffile:" + newReffile))
+			logt.Panic(errors.New("reffile:" + reffile + " != newReffile:" + newReffile))
 		}
 
 		if reffile != "" && logTraceFlags&Trfnobegref == 0 {
@@ -95,15 +95,15 @@ func helpltend(lvladj int, trlabel string, start time.Time, begFn, reffile, refl
 	endFn := Lvl(Lgpar + lvladj)
 	if begFn != endFn {
 		if strings.Contains(CStk(), "<--runtime.gopanic") {
-			log.Println("GOPANIC DETECTED --exiting '"+trlabel+"'(helpltend)>CStk:", CStk())
-			log.Println("begFn:"+begFn+" != endFn:"+endFn, " reffile:", reffile, " reflnum", reflnum, "\n\n ")
+			logt.Println("GOPANIC DETECTED --exiting '"+trlabel+"'(helpltend)>CStk:", CStk())
+			logt.Println("begFn:"+begFn+" != endFn:"+endFn, " reffile:", reffile, " reflnum", reflnum, "\n\n ")
 			return
 		}
 		// if Idiomatic usage of LogTrace and LogTraceMsgs then should not have a panic.
 		err := fmt.Sprintf("begFn != endFn\n begFn:%s\n endFn:%s\n  Cstk:%s \n"+
 			"Panic probable cause due to end trace pairing return portion called from different func",
 			begFn, endFn, CStk())
-		log.Panic(errors.New(err))
+		logt.Panic(errors.New(err)) // see todo above
 	}
 	if endMsg != "" {
 		endMsg = " " + endMsg
