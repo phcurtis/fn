@@ -39,7 +39,7 @@ var logAlignFunc int
 
 // Log related constants
 const (
-	LogAlignFileDef = 24 // log alignment 'file' field minimum width
+	LogAlignFileDef = 16 // log alignment 'file' field minimum width
 	LogAlignFileMax = 50 // log alignment 'file' field minimum width max
 
 	LogAlignFuncDef = 0  // log alignment 'func' field minimum width
@@ -157,6 +157,7 @@ func LogPrefix() string {
 }
 
 // [log] Trace Flags options referenced during LogTrace() and LogTraceMsgs()()
+// funcs LogSetTraceFlags sets the Trace Flags and LogTraceFlags retrieves current trace flags.
 const (
 	Trlogignore      = 1 << iota // if set return before any processing (faster than ioutil.Discard)
 	Trbegtime                    // print begin time
