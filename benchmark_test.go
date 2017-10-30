@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 	"testing"
@@ -136,16 +135,16 @@ func routeTmpFile(b *testing.B) func() {
 		b.Fatal(err)
 	}
 	if testing.Verbose() {
-		log.Printf("\nrouting output to tempfile:%s\n", tmpfile.Name())
+		b.Logf("\nrouting output to tempfile:%s\n", tmpfile.Name())
 	}
 	fn.LogSetOutput(tmpfile)
 	return func() {
 		if testing.Verbose() {
-			log.Printf("\nremoving tempfile:%s\n", tmpfile.Name())
+			b.Logf("\nremoving tempfile:%s\n", tmpfile.Name())
 		}
 		err := os.Remove(tmpfile.Name())
 		if err != nil {
-			log.Printf("\nerror removing %v err:%v\n", tmpfile.Name(), err)
+			b.Logf("\nerror removing %v err:%v\n", tmpfile.Name(), err)
 		}
 	}
 }
@@ -283,7 +282,7 @@ func BenchmarkLog(b *testing.B) {
 			})
 
 		default:
-			log.Panic("unknown switch case in: " + fn.Cur())
+			b.Fatal("unknown switch case in: " + fn.Cur())
 		}
 	}
 
