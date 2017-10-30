@@ -18,26 +18,23 @@ import (
 
 func Test_logtr_panic1(t *testing.T) {
 	if !testing.Verbose() {
-		fn.LogSetOutput(ioutil.Discard) // to hide trace output
+		defer fn.LogSetOutput(fn.LogGetOutput()) // to restore logt output on exit
+		fn.LogSetOutput(ioutil.Discard)          // to hide trace output
 	} else {
 		fn.LogSetOutput(os.Stderr) // so will see trace output and LogTrace stuff
 	}
-	if !testing.Verbose() {
-		log.SetOutput(ioutil.Discard) // toss log.Panic output
-	}
-	defer log.SetOutput(os.Stderr) // restore log output
 
 	defer func() {
 		var p interface{}
 		p = recover()
 		if testing.Verbose() {
-			log.Printf("panicErr:%v\n", p)
+			t.Logf("panicErr:%v\n", p)
 		}
 		if p == nil {
 			t.Errorf("should have paniced ... panic invoked below ")
 		}
 		if testing.Verbose() {
-			log.Println("Recovered from panic")
+			t.Logf("Recovered from panic")
 		}
 	}()
 
@@ -46,11 +43,9 @@ func Test_logtr_panic1(t *testing.T) {
 }
 
 func Test_logtr_panic2(t *testing.T) {
-	fn.LogSetOutput(ioutil.Discard) // to hide trace output
-	defer fn.SetPkgCfgDef(true)     // restore defaults at end of this func
-
-	log.SetOutput(ioutil.Discard)  // toss log.Panic output
-	defer log.SetOutput(os.Stderr) // restore log output
+	defer fn.LogSetOutput(fn.LogGetOutput()) // to restore logt output on exit
+	fn.LogSetOutput(ioutil.Discard)          // to hide trace output
+	defer fn.SetPkgCfgDef(true)              // restore defaults at end of this func
 
 	endtrf := fn.LogTrace()
 
@@ -293,12 +288,11 @@ func Test_logfuncs(t *testing.T) {
 				gote = readStdoutCapLine(buf)
 
 			default:
-				log.Panic("ftype not recognized")
+				t.Fatal("ftype not recognized")
 			}
 			if testing.Verbose() {
-				log.SetFlags(0)
-				log.Printf("%[1]s:%[2]s  gotb:%[3]s \n%[1]s:%[2]s wantb:%[4]s \n", funcname, v.name, gotb, v.wantb)
-				log.Printf("%[1]s:%[2]s  gote:%[3]s \n%[1]s:%[2]s wante:%[4]s \n", funcname, v.name, gote, v.wante)
+				t.Logf("%[1]s:%[2]s  gotb:%[3]s \n%[1]s:%[2]s wantb:%[4]s \n", funcname, v.name, gotb, v.wantb)
+				t.Logf("%[1]s:%[2]s  gote:%[3]s \n%[1]s:%[2]s wante:%[4]s \n", funcname, v.name, gote, v.wante)
 			}
 			if v.regexp {
 				re := regexp.MustCompile(v.wantb)
