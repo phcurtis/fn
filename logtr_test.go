@@ -101,6 +101,7 @@ func Test_logfuncs(t *testing.T) {
 		LCTMPFYes
 		LCTMPFNo
 		LTMPF
+		LCM
 	)
 
 	reDate := `\d{4}/\d\d/\d\d`
@@ -247,6 +248,18 @@ func Test_logfuncs(t *testing.T) {
 		{"tV", LTMPF, false, true, "msg1", "msg2", log.Lshortfile, fn.Trlogignore,
 			"",
 			""},
+
+		{"tW", LCM, true, false, "msg1", "", fn.LflagsOff, fn.TrFlagsOff,
+			"LogFN: " + fn.LmsgLab + fullFN + " msg1",
+			"LogFN: " + fn.LmsgLab + fullFN + " msg1"},
+
+		{"tX", LCM, true, false, "msg1", "", fn.LflagsOff, fn.Trlogignore,
+			"",
+			""},
+
+		{"tY", LCM, false, false, "msg1", "", fn.LflagsOff, fn.TrFlagsOff,
+			"",
+			""},
 	}
 
 	var gotb, gote string
@@ -256,6 +269,10 @@ func Test_logfuncs(t *testing.T) {
 			fn.LogSetFlags(v.lflags)
 			fn.LogSetTraceFlags(v.trflags)
 			switch v.ftype {
+			case LCM:
+				fn.LogCondMsg(v.condval, v.arg1)
+				gotb = readStdoutCapLine(buf)
+				gote = gotb // make match because LogCondMsg does not have pair msg.
 			case LTF:
 				f2 := fn.LogTrace()
 				gotb = readStdoutCapLine(buf)

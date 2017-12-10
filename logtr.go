@@ -197,7 +197,9 @@ func LogCondTrace(cond bool) func() {
 	}
 }
 
-// LogCondMsg - logs message if cond true.
+// LogCondMsg - logs message if cond true, similar to
+// LogCondTrace but with a message and is unpaired,
+// its a one line message nor beg/end just 'Msg:'.
 func LogCondMsg(cond bool, msg string) {
 	if !cond {
 		return
@@ -211,7 +213,7 @@ func LogCondMsg(cond bool, msg string) {
 	}
 	muLogt.Unlock()
 
-	helpltbeg(0, "Msg:", msg)
+	helpltbeg(0, LmsgLab, msg)
 }
 
 // LogCondTraceMsgs - conditional version of LogTraceMsgs.

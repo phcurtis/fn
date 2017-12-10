@@ -28,6 +28,7 @@ const (
 	LendTraceMsgsLab = "EndTrMsg:"
 	LbegTraceMsgpLab = "BegTrMsp:"
 	LendTraceMsgpLab = "EndTrMsp:"
+	LmsgLab          = "Msg:"
 )
 
 var gopathsrc string
