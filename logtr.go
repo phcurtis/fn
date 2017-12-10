@@ -197,6 +197,23 @@ func LogCondTrace(cond bool) func() {
 	}
 }
 
+// LogCondMsg - logs message if cond true.
+func LogCondMsg(cond bool, msg string) {
+	if !cond {
+		return
+	}
+
+	muLogt.Lock()
+	// may not want this check
+	if logTraceFlags&Trlogignore > 0 {
+		muLogt.Unlock()
+		return
+	}
+	muLogt.Unlock()
+
+	helpltbeg(0, "Msg:", msg)
+}
+
 // LogCondTraceMsgs - conditional version of LogTraceMsgs.
 //	cond - if true call LogTraceMsgs.
 func LogCondTraceMsgs(cond bool, begMsg string) func(endMsg string) {
